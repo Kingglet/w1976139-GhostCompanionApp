@@ -206,11 +206,16 @@ fun parseCameraSettings(xml: String): CameraSettings{
 
 suspend fun checkConnection(): Boolean{
     try {
-        val response = httpGetter("http://$ip/cgi-bin/foream_remote_control?get_camera_status")
-        val status = parseCameraSettings(response)
-        Log.d("CAMERA","Camera Connected. Default IP:  192.168.42.1")
+        val status = getCameraSettings()
 
-        return true
+        if (status != null) {
+            Log.d("CAMERA", "Camera Connected. Default IP:  192.168.42.1")
+            return true
+        } else {
+            return false
+        }
+
+
     } catch (e: Exception) {
         Log.d("CAMERA","Connection Failed")
         return false
@@ -223,24 +228,66 @@ suspend fun getCameraStatus(): String {
     //val ip = findCameraIP() ?: "192.168.42.1"
 
     return try {
-        val response = httpGetter("http://$ip/cgi-bin/foream_remote_control?get_camera_status")
+        val status = getCameraSettings()
 
-        val status = parseCameraSettings(response)
+        if (status != null){
+            Log.d("CAMERA","Camera Connected. Default IP:  192.168.42.1")
 
+            """
+            Battery: ${status.battery}%
+            Recording: ${if (status.recTime == 0) "No" else "Yes"}
+            Remaining Storage: ${status.sdFree / status.sdTotal}%
+            """.trimIndent()
+        } else {
+            "Settings Not Received"
+        }
 
-        Log.d("CAMERA","Camera Connected. Default IP:  192.168.42.1")
-        Log.d("CAMERA",response)
-
-        """
-        Battery: ${status.battery}%
-        Recording: ${if (status.recTime == 0) "No" else "Yes"}
-        Remaining Storage: ${status.sdFree / status.sdTotal}%
-        """.trimIndent()
 
     }
     catch (e: Exception){
         Log.d("CAMERA","Connection Failed")
         "Connection error - Check phone is connected to camera Wi-Fi"
+    }
+}
+
+suspend fun getCameraSettings(): CameraSettings {
+
+    return try {
+        val response = httpGetter("http://$ip/cgi-bin/foream_remote_control?get_camera_status")
+
+        val cameraSetting = parseCameraSettings(response)
+
+
+        Log.d("CAMERA","Settings Received")
+        Log.d("CAMERA",response)
+
+        cameraSetting
+
+    }
+    catch (e: Exception){
+        Log.e("CAMERA","Settings Not Received")
+        CameraSettings(
+            status = 0,
+            captureMode = 0,
+            battery = 0,
+            sdFree = 0,
+            sdTotal = 0,
+            recTime = 0,
+            fwVer = 0,
+            modelName = "",
+            res = 0,
+            framerate = 0,
+            bitrate = 0,
+            quality = 0,
+            streamRes = 0,
+            streamFramerate = 0,
+            streamBitrate = 0,
+            dzoom = 0,
+            filter = 0,
+            exposure = 0,
+            mic = 0,
+            led = 0,
+            hdRecord = 0)
     }
 }
 
@@ -335,10 +382,50 @@ suspend fun switchToPhotoMode(): String {
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
-            "Switched to Photo Mode"
+            "Photo"
         } else {
             Log.d("CAMERA", response)
             "Failed to Switch to Photo Mode"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun switchToTimelapseMode(): String {
+    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_timelapse_mode"
+
+    try{
+        val response = httpGetter(APICall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Timelapse"
+        } else {
+            Log.d("CAMERA", response)
+            "Failed to Switch to Timelapse Mode"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun switchToBurstMode(): String {
+    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
+
+    try{
+        val response = httpGetter(APICall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Burst"
+        } else {
+            Log.d("CAMERA", response)
+            "Failed to Switch to Burst Mode"
         }
     }
 

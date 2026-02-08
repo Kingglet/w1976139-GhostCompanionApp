@@ -1,6 +1,7 @@
 package com.example.ghostcompanionapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,11 +32,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.*
 import kotlinx.coroutines.launch
 import com.example.ghostcompanionapp.ui.theme.GhostCompanionAppTheme
+import kotlinx.coroutines.delay
 
 
 lateinit var currentCameraSettings: CameraSettings
 lateinit var pendingCameraSettings: CameraSettings
-lateinit var currentVideoMode: String
+
+
+lateinit var currentSettings: CameraSettings
 
 
 
@@ -163,7 +168,8 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
                     connectToCameraState = false
                     scope.launch {
                         responseMessage = "Checking Connection..."
-                        if (checkConnection()) {
+                        currentSettings = getCameraSettings()
+                        if (currentSettings.status == 1) {
                             navController.navigate("cameraView")
                         } else {
                             responseMessage = "Camera Not Connected"
@@ -246,6 +252,50 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
 fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("")}
+    var buttonText by rememberSaveable { mutableStateOf ("")}
+    var videoModeState by rememberSaveable { mutableStateOf(true) }
+    var photoModeState by rememberSaveable { mutableStateOf(true) }
+    var timelapseModeState by rememberSaveable { mutableStateOf(true) }
+    var burstModeState by rememberSaveable { mutableStateOf(true) }
+
+
+    when (currentSettings.captureMode) {
+        0 -> {videoModeState = false; responseMessage = "Video Mode Selected"}
+        1 -> {photoModeState = false; responseMessage = "Photo Mode Selected"}
+        2 -> {timelapseModeState = false; responseMessage = "Timelapse Mode Selected"}
+        3 -> {burstModeState = false; responseMessage = "Burst Mode Selected"}
+    }
+
+
+    LaunchedEffect(Unit) {
+        while(true){
+            try {
+                currentSettings = getCameraSettings()
+
+                videoModeState = true
+                photoModeState = true
+                timelapseModeState = true
+                burstModeState = true
+
+                when (currentSettings.captureMode) {
+                    0 -> {videoModeState = false; responseMessage = "Video Mode Selected"}
+                    1 -> {photoModeState = false; responseMessage = "Photo Mode Selected"}
+                    2 -> {timelapseModeState = false; responseMessage = "Timelapse Mode Selected"}
+                    3 -> {burstModeState = false; responseMessage = "Burst Mode Selected"}
+                }
+
+
+            }   catch (e: Exception) {
+                Log.e("CAMERA", "Failed to get settings")
+            }
+
+            delay(100)
+        }
+    }
+
+
+
+
 
 
 
@@ -266,14 +316,16 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToVideoMode()
                         if (response == "Video"){
-                            currentVideoMode = response
+                            currentSettings = getCameraSettings()
                             responseMessage = "Switched to Video Mode"
 
                         } else {
                             responseMessage = response
                         }
                     }
-                }) {
+                },
+                enabled = videoModeState
+            ) {
                 Text("Video")
             }
 
@@ -285,15 +337,66 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToPhotoMode()
                         if (response == "Photo"){
-                            currentVideoMode = response
+                            currentSettings = getCameraSettings()
                             responseMessage = "Switched to Photo Mode"
 
                         } else {
                             responseMessage = response
                         }
                     }
-                }) {
+                },
+                enabled = photoModeState
+            ) {
                 Text("Photo")
+            }
+        }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Switching to Timelapse Mode..."
+                        val response = switchToTimelapseMode()
+                        if (response == "Timelapse"){
+                            currentSettings = getCameraSettings()
+                            responseMessage = "Switched to Timelapse Mode"
+
+                        } else {
+                            responseMessage = response
+                        }
+                    }
+                },
+                enabled = timelapseModeState
+            ) {
+                Text("Timelapse")
+            }
+
+
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Switching to Burst Mode..."
+                        val response = switchToBurstMode()
+                        if (response == "Burst"){
+                            currentSettings = getCameraSettings()
+                            responseMessage = "Switched to Burst Mode"
+
+                        } else {
+                            responseMessage = response
+                        }
+                    }
+                },
+                enabled = burstModeState
+            ) {
+                Text("Burst")
             }
         }
 
@@ -327,15 +430,24 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 shape = RoundedCornerShape(16.dp),
                 onClick = {
                     scope.launch {
-                        when (currentVideoMode){
-                            "Video" -> responseMessage = startRecording()
-                            "Photo" -> responseMessage = takePhoto()
-                            else -> responseMessage = "Button Error"
+                        when (currentSettings.captureMode){
+                            0 -> responseMessage = startRecording()
+                            1 -> responseMessage = takePhoto()
+                            2 -> responseMessage = takePhoto()
+                            3 -> responseMessage = takePhoto()
 
                         }
                     }
                 }) {
-                Text("Start Recording")
+
+                when (currentSettings.captureMode){
+                    0 -> buttonText = "Start Recording"
+                    1 -> buttonText = "Take Photo"
+                    2 -> buttonText = "Start Timelapse"
+                    3 -> buttonText = "Take Burst"
+                }
+
+                Text(buttonText)
             }
 
         }
