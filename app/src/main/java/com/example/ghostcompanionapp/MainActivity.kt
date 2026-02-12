@@ -1,6 +1,9 @@
 package com.example.ghostcompanionapp
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings.ACTION_WIFI_SETTINGS
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
@@ -26,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -63,14 +69,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("mainMenu") {
-                        MainMenu(navController)
+                        MainMenu(navController, context = LocalContext.current)
                     }
 
                     composable("cameraView"){
                         CameraView(navController)
                     }
 
-                    composable("placehold") {
+                    composable("placeholder") {
                         Placeholder(navController)
                     }
 
@@ -104,7 +110,7 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
 
         Row(
@@ -113,8 +119,9 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Weclome!",
-                modifier = Modifier.padding(24.dp)
+                text = "Drift Ghost Companion App",
+                modifier = Modifier.padding(24.dp),
+                textAlign = TextAlign.Center
             )
         }
 
@@ -126,6 +133,7 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
+                modifier = Modifier.weight(1f).width(300.dp),
                 onClick = {
                     navController.navigate("mainMenu")
 
@@ -136,9 +144,10 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
     }
 }
 
-// gui for the first screen the user is showm
+// gui for the first screen the user is shown
 @Composable
-fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
+fun MainMenu(navController: NavController, modifier: Modifier = Modifier, context: Context) {
+
 
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("") }
@@ -149,7 +158,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(12.dp)
     ){
     //Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 
@@ -160,7 +169,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            // to add sample movies to database
+
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
@@ -179,13 +188,20 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
                     }
 
                 },
-                enabled = connectToCameraState)
+                enabled = connectToCameraState
+            )
             {
                 Text("Connect to Camera")
             }
+        }
+        Spacer(modifier = Modifier.padding(4.dp))
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
 
-            // button to navigate to movie search screen
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
@@ -206,12 +222,13 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.padding(4.dp))
 
+        /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // button to navigate to matching movie search screen
+
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
@@ -223,16 +240,21 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.padding(4.dp))
 
+         */
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // button to navigate to matching movie search screen
+
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    navController.navigate("placeholder")
+                    //navController.navigate("placeholder")
+
+                    val i = Intent(ACTION_WIFI_SETTINGS)
+                    context.startActivity(i)
                 }) {
                 Text("Go To Wi-Fi Settings")
             }
@@ -302,8 +324,67 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
+
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                },
+                enabled = !videoModeState
+            ) {
+                Text("Video")
+            }
+
+
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+
+                },
+                enabled = !photoModeState
+            ) {
+                Text("Photo")
+            }
+        }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+
+                },
+                enabled = !timelapseModeState
+            ) {
+                Text("Timelapse")
+            }
+
+
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                },
+                enabled = !burstModeState
+            ) {
+                Text("Burst")
+            }
+        }
+
+
+        // Button function included
+        /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -399,6 +480,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 Text("Burst")
             }
         }
+        */
 
         Spacer(modifier = Modifier.padding(4.dp))
 
@@ -472,7 +554,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
 
             Spacer(modifier = Modifier.padding(6.dp))
@@ -552,7 +634,7 @@ fun Placeholder(navController: NavController, modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
         Column{
             Text(
