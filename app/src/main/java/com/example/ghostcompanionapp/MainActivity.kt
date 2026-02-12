@@ -275,10 +275,13 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("")}
     var buttonText by rememberSaveable { mutableStateOf ("")}
-    var videoModeState by rememberSaveable { mutableStateOf(true) }
-    var photoModeState by rememberSaveable { mutableStateOf(true) }
-    var timelapseModeState by rememberSaveable { mutableStateOf(true) }
-    var burstModeState by rememberSaveable { mutableStateOf(true) }
+    var videoModeState by rememberSaveable { mutableStateOf(false) }
+    var photoModeState by rememberSaveable { mutableStateOf(false) }
+    var timelapseModeState by rememberSaveable { mutableStateOf(false) }
+    var burstModeState by rememberSaveable { mutableStateOf(false) }
+    var settingsButtonState by rememberSaveable { mutableStateOf(false) }
+    var isRecording by rememberSaveable { mutableStateOf(false) }
+
 
 
     when (currentSettings.captureMode) {
@@ -286,6 +289,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
         1 -> {photoModeState = false; responseMessage = "Photo Mode Selected"}
         2 -> {timelapseModeState = false; responseMessage = "Timelapse Mode Selected"}
         3 -> {burstModeState = false; responseMessage = "Burst Mode Selected"}
+        4 -> {settingsButtonState = false; responseMessage = "Changing Settings in Camera"}
     }
 
 
@@ -294,17 +298,32 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             try {
                 currentSettings = getCameraSettings()
 
-                videoModeState = true
-                photoModeState = true
-                timelapseModeState = true
-                burstModeState = true
 
-                when (currentSettings.captureMode) {
-                    0 -> {videoModeState = false; responseMessage = "Video Mode Selected"}
-                    1 -> {photoModeState = false; responseMessage = "Photo Mode Selected"}
-                    2 -> {timelapseModeState = false; responseMessage = "Timelapse Mode Selected"}
-                    3 -> {burstModeState = false; responseMessage = "Burst Mode Selected"}
+                if (currentSettings.recTime != 0 || currentSettings.captureMode == 4)   {
+                    videoModeState = false
+                    photoModeState = false
+                    timelapseModeState = false
+                    burstModeState = false
+                    settingsButtonState = false
+                    isRecording = true
+                } else {
+
+                    videoModeState = true
+                    photoModeState = true
+                    timelapseModeState = true
+                    burstModeState = true
+                    settingsButtonState = true
+                    isRecording = false
+
+                    when (currentSettings.captureMode) {
+                        0 -> {videoModeState = false; responseMessage = "Video Mode Selected"}
+                        1 -> {photoModeState = false; responseMessage = "Photo Mode Selected"}
+                        2 -> {timelapseModeState = false; responseMessage = "Timelapse Mode Selected"}
+                        3 -> {burstModeState = false; responseMessage = "Burst Mode Selected"}
+                        4 -> {settingsButtonState = false; responseMessage = "Changing Settings in Camera"}
+                    }
                 }
+
 
 
             }   catch (e: Exception) {
@@ -320,13 +339,21 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
 
 
-
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%")
+        }
+
+        Spacer(modifier = Modifier.padding(10.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -337,7 +364,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 modifier = Modifier.weight(1f),
                 onClick = {
                 },
-                enabled = !videoModeState
+                enabled = videoModeState
             ) {
                 Text("Video")
             }
@@ -348,7 +375,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 onClick = {
 
                 },
-                enabled = !photoModeState
+                enabled = photoModeState
             ) {
                 Text("Photo")
             }
@@ -366,7 +393,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 onClick = {
 
                 },
-                enabled = !timelapseModeState
+                enabled = timelapseModeState
             ) {
                 Text("Timelapse")
             }
@@ -376,7 +403,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 modifier = Modifier.weight(1f),
                 onClick = {
                 },
-                enabled = !burstModeState
+                enabled = burstModeState
             ) {
                 Text("Burst")
             }
@@ -495,7 +522,9 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                     scope.launch {
                         navController.navigate("settings")
                     }
-                }) {
+                },
+                enabled = settingsButtonState)
+            {
                 Text("Settings")
             }
         }
@@ -512,22 +541,35 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 shape = RoundedCornerShape(16.dp),
                 onClick = {
                     scope.launch {
-                        when (currentSettings.captureMode){
-                            0 -> responseMessage = startRecording()
-                            1 -> responseMessage = takePhoto()
-                            2 -> responseMessage = takePhoto()
-                            3 -> responseMessage = takePhoto()
+                        if (isRecording == true) {
+                            responseMessage = stopRecording()
+                            isRecording = false
+                        } else {
 
+                            when (currentSettings.captureMode){
+                                0 -> responseMessage = startRecording()
+                                1 -> responseMessage = takePhoto()
+                                2 -> responseMessage = takePhoto()
+                                3 -> responseMessage = takePhoto()
+                            }
                         }
                     }
-                }) {
+                },
+                enabled = settingsButtonState || (isRecording && currentSettings.captureMode == 0)
+            ) {
 
-                when (currentSettings.captureMode){
-                    0 -> buttonText = "Start Recording"
-                    1 -> buttonText = "Take Photo"
-                    2 -> buttonText = "Start Timelapse"
-                    3 -> buttonText = "Take Burst"
+                if (isRecording != false) {
+                    buttonText = "Stop Recording"
+                } else {
+
+                    when (currentSettings.captureMode){
+                        0 -> buttonText = "Start Recording"
+                        1 -> buttonText = "Take Photo"
+                        2 -> buttonText = "Start Timelapse"
+                        3 -> buttonText = "Take Burst"
+                    }
                 }
+
 
                 Text(buttonText)
             }

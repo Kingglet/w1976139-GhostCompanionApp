@@ -11,6 +11,8 @@ import java.net.DatagramSocket
 import java.net.HttpURLConnection
 import java.net.URL
 import android.util.Log
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 var ip = "192.168.42.1"
 
@@ -204,6 +206,14 @@ fun parseCameraSettings(xml: String): CameraSettings{
 
 }
 
+
+fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
+    val calculationFactor = 100 / sdTotal.toDouble()
+    val remainingStorage =  sdFree.toDouble() * calculationFactor
+    //val roundedStorage = round(remainingStorage)
+    return remainingStorage.roundToInt()
+}
+
 suspend fun checkConnection(): Boolean{
     try {
         val status = getCameraSettings()
@@ -236,7 +246,7 @@ suspend fun getCameraStatus(): String {
             """
             Battery: ${status.battery}%
             Recording: ${if (status.recTime == 0) "No" else "Yes"}
-            Remaining Storage: ${status.sdFree / status.sdTotal}%
+            Remaining Storage: ${getStoragePercent(status.sdTotal, status.sdFree)}%
             """.trimIndent()
         } else {
             "Settings Not Received"
