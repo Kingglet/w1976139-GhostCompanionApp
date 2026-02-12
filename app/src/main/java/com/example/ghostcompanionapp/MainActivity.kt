@@ -39,6 +39,7 @@ import androidx.navigation.compose.*
 import kotlinx.coroutines.launch
 import com.example.ghostcompanionapp.ui.theme.GhostCompanionAppTheme
 import kotlinx.coroutines.delay
+import kotlin.text.trimIndent
 
 
 lateinit var currentCameraSettings: CameraSettings
@@ -363,63 +364,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                },
-                enabled = videoModeState
-            ) {
-                Text("Video")
-            }
-
-
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-
-                },
-                enabled = photoModeState
-            ) {
-                Text("Photo")
-            }
-        }
-
-        Spacer(modifier = Modifier.padding(4.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-
-                },
-                enabled = timelapseModeState
-            ) {
-                Text("Timelapse")
-            }
-
-
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                },
-                enabled = burstModeState
-            ) {
-                Text("Burst")
-            }
-        }
-
-
-        // Button function included
-        /*
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
+                    /*
                     scope.launch {
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToVideoMode()
@@ -431,6 +376,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
+                     */
                 },
                 enabled = videoModeState
             ) {
@@ -441,6 +387,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    /*
                     scope.launch {
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToPhotoMode()
@@ -452,6 +399,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
+                     */
                 },
                 enabled = photoModeState
             ) {
@@ -469,6 +417,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    /*
                     scope.launch {
                         responseMessage = "Switching to Timelapse Mode..."
                         val response = switchToTimelapseMode()
@@ -480,6 +429,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
+                    */
                 },
                 enabled = timelapseModeState
             ) {
@@ -490,6 +440,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    /*
                     scope.launch {
                         responseMessage = "Switching to Burst Mode..."
                         val response = switchToBurstMode()
@@ -501,13 +452,15 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
+                    */
                 },
                 enabled = burstModeState
             ) {
                 Text("Burst")
             }
         }
-        */
+
+
 
         Spacer(modifier = Modifier.padding(4.dp))
 
@@ -601,7 +554,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
 
             Spacer(modifier = Modifier.padding(6.dp))
 
-            Row(
+        Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -618,7 +571,27 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
                 }
             }
 
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("""
+                Current Battery: ${currentSettings.battery}%
+                Remaining Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%
+                Firmware Version: ${currentSettings.fwVer}
+                Model Name: ${currentSettings.modelName}
+                Video Resolution: ${currentSettings.res}p
+                Video Framerate: ${currentSettings.framerate}FPS
+                
+            """.trimIndent())
+        }
+
             Spacer(modifier = Modifier.padding(10.dp))
+
+
+
 
             Text(responseMessage)
         }
