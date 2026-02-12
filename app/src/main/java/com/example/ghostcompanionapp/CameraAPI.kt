@@ -208,20 +208,27 @@ fun parseCameraSettings(xml: String): CameraSettings{
 
 
 fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
-    val calculationFactor = 100 / sdTotal.toDouble()
-    val remainingStorage =  sdFree.toDouble() * calculationFactor
-    //val roundedStorage = round(remainingStorage)
-    return remainingStorage.roundToInt()
+    try {
+        val calculationFactor = 100 / sdTotal.toDouble()
+        val remainingStorage =  sdFree.toDouble() * calculationFactor
+        //val roundedStorage = round(remainingStorage)
+        return remainingStorage.roundToInt()
+    }
+    catch (e: Exception){
+        return 0
+    }
+
 }
 
 suspend fun checkConnection(): Boolean{
     try {
         val status = getCameraSettings()
 
-        if (status != null) {
+        if (status.status == 1) {
             Log.d("CAMERA", "Camera Connected. Default IP:  192.168.42.1")
             return true
         } else {
+            Log.d("CAMERA","Connection Failed")
             return false
         }
 
@@ -240,7 +247,7 @@ suspend fun getCameraStatus(): String {
     return try {
         val status = getCameraSettings()
 
-        if (status != null){
+        if (status.status == 1){
             Log.d("CAMERA","Camera Connected. Default IP:  192.168.42.1")
 
             """
@@ -249,6 +256,7 @@ suspend fun getCameraStatus(): String {
             Remaining Storage: ${getStoragePercent(status.sdTotal, status.sdFree)}%
             """.trimIndent()
         } else {
+            Log.e("CAMERA","Camera Not Connected")
             "Settings Not Received"
         }
 
@@ -343,10 +351,10 @@ suspend fun stopRecording(): String {
 }
 
 suspend fun takePhoto(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?take_photo"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?take_photo"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -363,10 +371,10 @@ suspend fun takePhoto(): String {
 }
 
 suspend fun switchToVideoMode(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_video_mode"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_video_mode"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -385,10 +393,10 @@ suspend fun switchToVideoMode(): String {
 }
 
 suspend fun switchToPhotoMode(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -405,10 +413,10 @@ suspend fun switchToPhotoMode(): String {
 }
 
 suspend fun switchToTimelapseMode(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_timelapse_mode"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_timelapse_mode"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -425,10 +433,10 @@ suspend fun switchToTimelapseMode(): String {
 }
 
 suspend fun switchToBurstMode(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -445,10 +453,10 @@ suspend fun switchToBurstMode(): String {
 }
 
 suspend fun setZoom(zoomLevel: Int): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?dzoom=$zoomLevel"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?dzoom=$zoomLevel"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
@@ -468,10 +476,10 @@ suspend fun setZoom(zoomLevel: Int): String {
 
 
 suspend fun APItemplate(): String {
-    val APICall = "http://$ip/cgi-bin/foream_remote_control?"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?"
 
     try{
-        val response = httpGetter(APICall)
+        val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)

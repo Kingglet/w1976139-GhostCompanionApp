@@ -473,6 +473,9 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 modifier = Modifier.weight(1f),
                 onClick = {
                     scope.launch {
+                        currentSettings = getCameraSettings()
+                        currentCameraSettings = currentSettings
+                        pendingCameraSettings = currentCameraSettings
                         navController.navigate("settings")
                     }
                 },
@@ -544,6 +547,19 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        while(true){
+            try {
+                currentSettings = getCameraSettings()
+
+            }   catch (e: Exception) {
+                Log.e("CAMERA", "Failed to get settings")
+            }
+
+            delay(100)
+        }
+    }
+
 
 
     Column(
@@ -564,7 +580,12 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
                     onClick = {
                         scope.launch {
                             responseMessage = "Connecting..."
-                            responseMessage = getCameraStatus()
+                            if (checkConnection() == true)  {
+                                responseMessage = "Camera is Connected!"
+                            } else {
+                                responseMessage = "Connection Error"
+                            }
+
                     }}
                 ) {
                     Text("Check Connection")
@@ -582,9 +603,8 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
                 Remaining Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%
                 Firmware Version: ${currentSettings.fwVer}
                 Model Name: ${currentSettings.modelName}
-                Video Resolution: ${currentSettings.res}p
-                Video Framerate: ${currentSettings.framerate}FPS
-                
+                Video Bitrate: ${currentSettings.bitrate} bits
+                Video Framerate: ${currentSettings.framerate} FPS
             """.trimIndent())
         }
 
