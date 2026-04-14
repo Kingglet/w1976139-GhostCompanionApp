@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import androidx.navigation.compose.*
 import kotlinx.coroutines.launch
@@ -271,6 +273,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     val scope = rememberCoroutineScope()
@@ -340,6 +343,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
 
 
+
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -352,6 +356,22 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%")
+        }
+
+        Spacer(modifier = Modifier.padding(10.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+
+
+
+            RtspLiveView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
         }
 
         Spacer(modifier = Modifier.padding(10.dp))
