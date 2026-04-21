@@ -551,6 +551,204 @@ suspend fun setZoom(zoomLevel: Int): String {
     }
 }
 
+suspend fun setLed(value: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?led=$value"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "LED set to $value")
+            "LED set to $value"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "LED value $value is invalid")
+            "LED not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setExposure(exposureLevel: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?exposure=$exposureLevel"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Exposure set to $exposureLevel")
+            "Exposure set to $exposureLevel"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Exposure level $exposureLevel is invalid")
+            "Exposure invalid"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setFilter(filterValue: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?filter=$filterValue"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Filter set to $filterValue")
+            "Filter set to $filterValue"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Filter value $filterValue is invalid")
+            "Filter not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setMicSensitivity(micSensitivity: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?mic_sensitivity=$micSensitivity"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Mic sensitivity set to $micSensitivity")
+            "Mic sensitivity set to $micSensitivity"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Mic sensitivity $micSensitivity is invalid")
+            "Mic sensitivity not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setTimestamp(value: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?stamp=$value"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Timestamp set to $value")
+            "Timestamp set to $value"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Timestamp value $value invalid")
+            "Timestamp not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setFOV(fovValue: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?fov=$fovValue"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "FOV set to $fovValue")
+            ""
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "FOV $fovValue invalid")
+            "FOV not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setThumbnail(value: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?thm-$value"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Thumbnail files set to $value")
+            "Thumbnail files set to $value"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Thumbnail files value $value invalid")
+            "Thumbnail files not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setLanguage(languageValue: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?language=$languageValue"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Language value set to $languageValue")
+            "Language value set to $languageValue"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Language value $languageValue invalid")
+            "Language not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun setCameraDateTime(dateTimeValue: String): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?set_time=$dateTimeValue"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Time set to $dateTimeValue")
+            "Time set to $dateTimeValue"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Time value $dateTimeValue may be invalid")
+            "Time not set"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
 suspend fun listFiles(): List<CameraFile> {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?list_files=/tmp/SD0/DCIM"
 
@@ -587,6 +785,7 @@ suspend fun APITest(): String {
         return "Connection Error"
     }
 }
+
 suspend fun APItemplate(): String {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?"
 
@@ -595,9 +794,11 @@ suspend fun APItemplate(): String {
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
+            Log.d("CAMERA", "response")
             ""
         } else {
             Log.d("CAMERA", response)
+            Log.d("CAMERA", "response")
             ""
         }
     }
