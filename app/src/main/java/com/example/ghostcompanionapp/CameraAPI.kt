@@ -206,6 +206,35 @@ fun parseCameraSettings(xml: String): CameraSettings{
 
 }
 
+fun parseFileList(xml: String): List<CameraFile> {
+    val files = mutableListOf<CameraFile>()
+
+    val factory = XmlPullParserFactory.newInstance()
+    val parser = factory.newPullParser()
+    parser.setInput(xml.reader())
+
+    var event = parser.eventType
+
+    while (event != XmlPullParser.END_DOCUMENT) {
+        if (event == XmlPullParser.START_TAG && parser.name == "file") {
+            val fileName = parser.nextText()
+
+            val ext = fileName.substringAfterLast(".", "").uppercase()
+
+            files.add(
+                CameraFile(
+                    fileName = fileName,
+                    filePath = fileName,
+                    fileType = ext
+                )
+            )
+        }
+    }
+
+    return files
+
+}
+
 
 fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
     try {
@@ -218,6 +247,13 @@ fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
         return 0
     }
 
+}
+
+suspend fun deleteFile(filePath: String): Boolean {
+    val url = "http://$ip/cgi-bin/foream_remote_control?delete_media_file=$filePath"
+    val xml = httpGetter(url)
+
+    return parseResponse(xml) == 1
 }
 
 suspend fun checkConnection(): Boolean{
@@ -474,7 +510,42 @@ suspend fun setZoom(zoomLevel: Int): String {
     }
 }
 
+suspend fun listFiles(): List<CameraFile> {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?list_files=/tmp/SD0/DCIM"
 
+
+    val response = httpGetter(apiCall)
+
+
+
+
+    return parseFileList(response)
+}
+
+suspend fun APITest(): String {
+    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?2"
+    //val apiCall = "http://$ip/setting/cgi-bin/fd_control_client?func=fd_set_camera_off"
+    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?reboot"
+
+    //val apiCall = "http://$ip/cgi-bin/fd_control_client?func="
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            ""
+        } else {
+            Log.d("CAMERA", response)
+            ""
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
 suspend fun APItemplate(): String {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?"
 

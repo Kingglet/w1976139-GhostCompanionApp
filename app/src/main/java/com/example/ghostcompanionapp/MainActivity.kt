@@ -172,6 +172,20 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             modifier = Modifier.fillMaxWidth()
         ) {
 
+            Button (
+                modifier= Modifier.weight(1f),
+                onClick = {
+                    scope.launch {
+
+                        var response = APITest()
+                    }
+                }
+
+                )
+            {
+                Text("Test Button")
+            }
+
 
             Button(
                 modifier = Modifier.weight(1f),
@@ -285,6 +299,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     var burstModeState by rememberSaveable { mutableStateOf(false) }
     var settingsButtonState by rememberSaveable { mutableStateOf(false) }
     var isRecording by rememberSaveable { mutableStateOf(false) }
+    var previewEnabled by rememberSaveable { mutableStateOf(false) }
 
 
 
@@ -366,12 +381,34 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
         ) {
 
 
+            if (previewEnabled) {
+                RtspLiveView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            } else {
+                Text("Live Preview Off")
+            }
+        }
 
-            RtspLiveView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            )
+        Spacer(modifier = Modifier.padding(10.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                onClick = {
+                    previewEnabled = !previewEnabled
+                }
+            ){
+                Text(if (previewEnabled) "Diable Live Preview"
+                else "Enable Live Preview")
+            }
         }
 
         Spacer(modifier = Modifier.padding(10.dp))
@@ -384,7 +421,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    /*
+
                     scope.launch {
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToVideoMode()
@@ -396,7 +433,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
-                     */
+
                 },
                 enabled = videoModeState
             ) {
@@ -407,7 +444,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    /*
+
                     scope.launch {
                         responseMessage = "Switching to Video Mode..."
                         val response = switchToPhotoMode()
@@ -419,7 +456,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
-                     */
+
                 },
                 enabled = photoModeState
             ) {
@@ -437,7 +474,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    /*
+
                     scope.launch {
                         responseMessage = "Switching to Timelapse Mode..."
                         val response = switchToTimelapseMode()
@@ -449,7 +486,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
-                    */
+
                 },
                 enabled = timelapseModeState
             ) {
@@ -460,7 +497,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    /*
+
                     scope.launch {
                         responseMessage = "Switching to Burst Mode..."
                         val response = switchToBurstMode()
@@ -472,7 +509,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                             responseMessage = response
                         }
                     }
-                    */
+
                 },
                 enabled = burstModeState
             ) {

@@ -30,6 +30,7 @@ fun RtspLiveView(
     val context = LocalContext.current
 
     val rtspUrl = "rtsp://192.168.42.1/live"
+    //val rtspUrl = "rtsp://192.168.42.1/AmbaStreamTest"
 
     var isConnecting by rememberSaveable { mutableStateOf(true)}
 
