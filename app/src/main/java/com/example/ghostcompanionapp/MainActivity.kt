@@ -2,6 +2,7 @@ package com.example.ghostcompanionapp
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings.ACTION_WIFI_SETTINGS
 import android.util.Log
@@ -17,14 +18,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -35,10 +40,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import com.example.ghostcompanionapp.ui.theme.GhostCompanionAppTheme
 import kotlinx.coroutines.delay
 import kotlin.text.trimIndent
@@ -85,6 +98,18 @@ class MainActivity : ComponentActivity() {
 
                     composable("settings"){
                         Settings(navController)
+                    }
+
+                    composable("fileViewer"){
+                        FileViewer(navController)
+                    }
+
+                    composable(
+                        route = "videoPlayer/{url}",
+                        arguments = listOf(navArgument("url") {type = NavType.StringType})
+                    ) {backStackEntry ->
+                        val url = backStackEntry.arguments?.getString("url") ?: ""
+                        VideoPlayerScreen(navController, url)
                     }
 
 
@@ -313,7 +338,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
 
     LaunchedEffect(Unit) {
-        while(true){
+        while(isActive){
             try {
                 currentSettings = getCameraSettings()
 
@@ -349,7 +374,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 Log.e("CAMERA", "Failed to get settings")
             }
 
-            delay(100)
+            delay(1000)
         }
     }
 
@@ -551,7 +576,6 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
         ){
             Button(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
                 onClick = {
                     scope.launch {
                         if (isRecording == true) {
@@ -589,6 +613,23 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
         }
 
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    navController.navigate("fileViewer")
+                }
+            ){
+                Text("View Files on SD Card")
+            }
+        }
+
         Spacer(modifier = Modifier.padding(10.dp))
 
         // displays confirmation messages for to the user after interacting with a button
@@ -605,7 +646,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
     var responseMessage by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        while(true){
+        while(isActive){
             try {
                 currentSettings = getCameraSettings()
 
@@ -613,7 +654,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
                 Log.e("CAMERA", "Failed to get settings")
             }
 
-            delay(100)
+            delay(1000)
         }
     }
 
@@ -674,7 +715,157 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
         }
     }
 
+@Composable
+fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    var responseMessage by rememberSaveable { mutableStateOf("Loading files...") }
 
+    val context = LocalContext.current
+    var fileList by rememberSaveable { mutableStateOf<List<CameraFile>>(emptyList()) }
+
+
+    LaunchedEffect(Unit) {
+        try {
+            fileList = listFiles()
+            responseMessage = "Files found: ${fileList.size}"
+
+        }
+        catch (e: Exception) {
+            responseMessage = "Failed to load files"
+        }
+    }
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().padding(12.dp)
+    ) {
+        Text(responseMessage)
+
+        Spacer(modifier = Modifier.padding(8.dp))
+
+        LazyColumn {
+            items(fileList) { file ->
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (file.fileType == "MP4"){
+                        Button(
+                            onClick = {
+                                val videoUrl = "http://$ip/DCIM/${file.filePath}"
+
+                                val encodedUrl = Uri.encode(videoUrl)
+
+                                navController.navigate("videoPlayer/$encodedUrl")
+                            },
+                            enabled = file.fileType == "MP4"
+                        ){
+                            Text("Play")
+                        }
+                    } else {
+
+
+                        Button(
+                            onClick = {
+                                val photoUrl = "http://$ip/DCIM/${file.filePath}"
+
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(photoUrl))
+                                context.startActivity(intent)
+                            },enabled = file.fileType == "JPG"
+                        ) {
+                            Text("View")
+                        }
+                    }
+
+
+                    Text(text = file.fileName,
+                        modifier = Modifier.weight(1f)
+                    )
+
+
+                    Button(
+                        onClick = {
+                            scope.launch{
+                                responseMessage = "Deleting ${file.fileName}..."
+                                val deletedFile = deleteFile(file.filePath)
+
+                                if (deletedFile) {
+                                    fileList = fileList.filter {it.filePath != file.filePath}
+                                    responseMessage = "Deleted ${file.fileName}"
+                                } else {
+                                    responseMessage = "Delete Failed"
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Delete File")
+                    }
+
+                }
+            }
+        }
+    }
+
+}
+
+@OptIn(UnstableApi::class)
+@Composable
+fun VideoPlayerScreen(navController: NavController, videoUrl: String, modifier: Modifier = Modifier) {
+
+    val scope = rememberCoroutineScope()
+    var responseMessage by rememberSaveable { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val decodedUrl = Uri.decode(videoUrl)
+
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            //setMediaItem(MediaItem.fromUri(videoUrl.toUri()))
+            setMediaItem(MediaItem.fromUri(decodedUrl.toUri()))
+            prepare()
+            playWhenReady = true
+        }
+
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { exoPlayer.release()}
+    }
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().padding(12.dp)
+    ) {
+
+        AndroidView(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            factory = {
+                PlayerView(it).apply {
+                    player = exoPlayer
+                    useController = true
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.padding(10.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { navController.popBackStack() }
+        ) {
+            Text("Back")
+        }
+
+    }
+
+    Spacer(modifier = Modifier.padding(10.dp))
+
+    Text(responseMessage)
+
+}
 
 @Composable
 fun Template(navController: NavController, modifier: Modifier = Modifier) {
@@ -682,18 +873,13 @@ fun Template(navController: NavController, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("") }
 
-    /*Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ){
-    */
 
-    Surface(color = Color.Cyan, modifier = modifier.fillMaxSize()){
+    //Surface(color = Color.Cyan, modifier = modifier.fillMaxSize()){
 
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().padding(12.dp)
         ) {
 
             Spacer(modifier = Modifier.padding(6.dp))
@@ -717,7 +903,7 @@ fun Template(navController: NavController, modifier: Modifier = Modifier) {
 
             Text(responseMessage)
         }
-    }
+    //}
 }
 
 

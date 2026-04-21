@@ -13,6 +13,7 @@ import java.net.URL
 import android.util.Log
 import kotlin.math.round
 import kotlin.math.roundToInt
+import org.json.JSONArray
 
 var ip = "192.168.42.1"
 
@@ -206,6 +207,7 @@ fun parseCameraSettings(xml: String): CameraSettings{
 
 }
 
+/*
 fun parseFileList(xml: String): List<CameraFile> {
     val files = mutableListOf<CameraFile>()
 
@@ -229,12 +231,51 @@ fun parseFileList(xml: String): List<CameraFile> {
                 )
             )
         }
+
+        event = parser.next()
     }
 
     return files
 
 }
+*/
 
+fun parseFileList(xml: String): List<CameraFile> {
+    val files = mutableListOf<CameraFile>()
+
+    val filesText = Regex("<Files>(.*?)</Files>")
+        .find(xml)
+        ?.groupValues
+        ?.get(1)
+        ?: return emptyList()
+
+    val cleaned = filesText.trim().removeSuffix(",")
+    val jsonArrayText = "[$cleaned]"
+
+    try {
+        val jsonArray = JSONArray(jsonArrayText)
+
+        for (i in 0 until jsonArray.length()) {
+            val obj = jsonArray.getJSONObject(i)
+
+            val path = obj.getString("Path")
+            val ext = path.substringAfterLast(".", "").uppercase()
+
+            files.add(
+                CameraFile(
+                    fileName = path.substringAfterLast("/"),
+                    filePath = path,
+                    fileType = ext
+                )
+            )
+        }
+
+    } catch (e: Exception) {
+        Log.e("FILE_PARSE", "Parse error", e)
+    }
+
+    return files
+}
 
 fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
     try {
@@ -517,7 +558,7 @@ suspend fun listFiles(): List<CameraFile> {
     val response = httpGetter(apiCall)
 
 
-
+    Log.d("CAMERA", response)
 
     return parseFileList(response)
 }
