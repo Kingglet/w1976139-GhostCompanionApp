@@ -112,6 +112,10 @@ class MainActivity : ComponentActivity() {
                         MainMenu(navController, context = LocalContext.current)
                     }
 
+                    composable("startLivestream"){
+                        Livestream(navController)
+                    }
+
                     composable("cameraView"){
                         CameraView(navController)
                     }
@@ -247,6 +251,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
                         responseMessage = "Checking Connection..."
                         currentSettings = getCameraSettings()
                         if (currentSettings.status == 1) {
+                            responseMessage = "Camera Connected!"
                             navController.navigate("cameraView")
                         } else {
                             responseMessage = "Camera Not Connected"
@@ -262,6 +267,41 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
                 Text("Connect to Camera")
             }
         }
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+
+
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    checkConnectionState = false
+                    connectToCameraState = false
+                    scope.launch {
+                        responseMessage = "Checking Connection..."
+                        currentSettings = getCameraSettings()
+                        if (currentSettings.status == 1) {
+                            responseMessage = "Camera Connected!"
+                            navController.navigate("startLivestream")
+                        } else {
+                            responseMessage = "Camera Not Connected"
+                        }
+                        checkConnectionState = true
+                        connectToCameraState = true
+                    }
+
+                },
+                enabled = connectToCameraState
+            )
+            {
+                Text("Start Livestream")
+            }
+        }
+
         Spacer(modifier = Modifier.padding(4.dp))
 
         Row(
