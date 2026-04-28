@@ -61,7 +61,31 @@ lateinit var currentCameraSettings: CameraSettings
 lateinit var pendingCameraSettings: CameraSettings
 
 
-lateinit var currentSettings: CameraSettings
+//lateinit var currentSettings: CameraSettings
+
+var currentSettings by mutableStateOf(
+    CameraSettings(
+        status = 0,
+        captureMode = 0,
+        battery = 0,
+        sdFree = 0,
+        sdTotal = 0,
+        recTime = 0,
+        fwVer = 0,
+        modelName = "",
+        res = 0,
+        framerate = 0,
+        bitrate = 0,
+        quality = 0,
+        streamRes = 0,
+        streamFramerate = 0,
+        streamBitrate = 0,
+        dzoom = 0,
+        filter = 0,
+        exposure = 0,
+        mic = 0,
+        led = 0,
+        hdRecord = 0))
 
 
 
@@ -142,13 +166,11 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
     ) {
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = "Drift Ghost Companion App",
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(8.dp),
                 textAlign = TextAlign.Center
             )
         }
@@ -197,12 +219,14 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             modifier = Modifier.fillMaxWidth()
         ) {
 
+            /*
             Button (
                 modifier= Modifier.weight(1f),
                 onClick = {
                     scope.launch {
 
-                        var response = APITest()
+                        var response = apiTest()
+                        responseMessage = response
                     }
                 }
 
@@ -210,6 +234,8 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             {
                 Text("Test Button")
             }
+
+             */
 
 
             Button(
@@ -307,7 +333,9 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
 
         // displays confirmation messages for to the user after interacting with a button
         Row {
-            Text(text = responseMessage)
+            Text(text = responseMessage,
+                modifier = Modifier.padding(8.dp),
+                textAlign = TextAlign.Center)
         }
     }
 }
@@ -318,13 +346,16 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("")}
     var buttonText by rememberSaveable { mutableStateOf ("")}
+
     var videoModeState by rememberSaveable { mutableStateOf(false) }
     var photoModeState by rememberSaveable { mutableStateOf(false) }
     var timelapseModeState by rememberSaveable { mutableStateOf(false) }
     var burstModeState by rememberSaveable { mutableStateOf(false) }
+
     var settingsButtonState by rememberSaveable { mutableStateOf(false) }
     var isRecording by rememberSaveable { mutableStateOf(false) }
     var previewEnabled by rememberSaveable { mutableStateOf(false) }
+
 
 
 
@@ -336,7 +367,24 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
         4 -> {settingsButtonState = false; responseMessage = "Changing Settings in Camera"}
     }
 
+    LaunchedEffect(Unit) {
+        while(isActive) {
+            try {
+                currentSettings = getCameraSettings()
 
+                isRecording = currentSettings.recTime != 0
+
+                responseMessage = getCaptureModeText(currentSettings.captureMode)
+
+                settingsButtonState = currentSettings.captureMode != 4 && !isRecording
+            } catch (e: Exception) {
+                Log.e("CAMERA", "Failed to get settings")
+            }
+            delay(2000)
+        }
+    }
+
+    /*
     LaunchedEffect(Unit) {
         while(isActive){
             try {
@@ -374,15 +422,23 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                 Log.e("CAMERA", "Failed to get settings")
             }
 
-            delay(1000)
+            delay(2000)
         }
     }
 
+     */
 
 
 
 
 
+
+
+    Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp),
+        textAlign = TextAlign.Center)
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -390,19 +446,21 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
         modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
 
+        /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%")
+            Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%",
+                modifier = Modifier.padding(4.dp),
+                textAlign = TextAlign.Center)
         }
 
         Spacer(modifier = Modifier.padding(10.dp))
 
+
+         */
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+
         ) {
 
 
@@ -413,7 +471,11 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
                         .weight(1f)
                 )
             } else {
-                Text("Live Preview Off")
+                Text(
+                    text = "Live Preview Off",
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -438,6 +500,13 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
         Spacer(modifier = Modifier.padding(10.dp))
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ){
+            Text(text = "Capture Mode: ${getCaptureModeText(currentSettings.captureMode)}")
+        }
+
+        /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -546,28 +615,10 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
         Spacer(modifier = Modifier.padding(4.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    scope.launch {
-                        currentSettings = getCameraSettings()
-                        currentCameraSettings = currentSettings
-                        pendingCameraSettings = currentCameraSettings
-                        navController.navigate("settings")
-                    }
-                },
-                enabled = settingsButtonState)
-            {
-                Text("Settings")
-            }
-        }
+         */
 
-        Spacer(modifier = Modifier.padding(4.dp))
+        Spacer(modifier = Modifier.padding(10.dp))
+
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -623,6 +674,29 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    scope.launch {
+                        currentSettings = getCameraSettings()
+                        currentCameraSettings = currentSettings
+                        pendingCameraSettings = currentCameraSettings
+                        navController.navigate("settings")
+                    }
+                },
+                enabled = settingsButtonState)
+            {
+                Text("Settings")
+            }
+        }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
                     navController.navigate("fileViewer")
                 }
             ){
@@ -639,6 +713,7 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
     }
 }
 
+/*
 @Composable
 fun Settings(navController: NavController, modifier: Modifier = Modifier){
 
@@ -714,6 +789,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier){
             Text(responseMessage)
         }
     }
+*/
 
 @Composable
 fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {

@@ -287,8 +287,19 @@ fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
     catch (e: Exception){
         return 0
     }
-
 }
+fun getCaptureModeText(modeInt: Int): String {
+    return when (modeInt) {
+        0 -> "Video Mode Selected"
+        1 -> "Photo Mode Selected"
+        2 -> "Timelapse Mode Selected"
+        3 -> "Burst Mode Selected"
+        4 -> "Changing Settings in Camera"
+        else -> "Unknow Capture Mode"
+    }
+}
+
+
 
 suspend fun deleteFile(filePath: String): Boolean {
     val url = "http://$ip/cgi-bin/foream_remote_control?delete_media_file=$filePath"
@@ -316,7 +327,34 @@ suspend fun checkConnection(): Boolean{
     }
 }
 
+fun getCameraMiscSettings(): String {
+    return try {
+        if (currentSettings.status == 1){
+            Log.d("CAMERA","Camera Connected and Settings Accessed")
+            """
+                Recording Resolution: ${when (currentSettings.res) {
+                0 -> "1080p"
+                1 -> "960p"
+                2 -> "720p"
+                3 -> "WVGA (848x480p)"
+                else -> "Unknown Recording Resolution"}}
+                Recording framerate: ${currentSettings.framerate}FPS
+                Battery: ${currentSettings.battery}%
+                Recording: ${if (currentSettings.recTime == 0) "No" else "Yes"}
+                Remaining Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%
+                Camera Model: ${currentSettings.modelName}
+                Firmware Version: ${currentSettings.fwVer}
+            """.trimIndent()
+        } else {
+            Log.e("CAMERA","Camera Not Connected")
+            "Settings Not Received"
+        }
 
+    } catch (e: Exception){
+        Log.e("CAMERA","Connection Failed")
+        "Connection error - Check phone is connected to camera Wi-Fi"
+    }
+}
 suspend fun getCameraStatus(): String {
     //val ip = findCameraIP()
     //val ip = findCameraIP() ?: "192.168.42.1"
@@ -340,7 +378,7 @@ suspend fun getCameraStatus(): String {
 
     }
     catch (e: Exception){
-        Log.d("CAMERA","Connection Failed")
+        Log.e("CAMERA","Connection Failed")
         "Connection error - Check phone is connected to camera Wi-Fi"
     }
 }
@@ -385,6 +423,8 @@ suspend fun getCameraSettings(): CameraSettings {
             hdRecord = 0)
     }
 }
+
+
 
 suspend fun startRecording(): String {
     //val ip = findCameraIP() ?: "192.168.42.1"
@@ -448,7 +488,8 @@ suspend fun takePhoto(): String {
 }
 
 suspend fun switchToVideoMode(): String {
-    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_video_mode"
+    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_video_mode"
+    val apiCall = "http://$ip/setting/cgi-bin/fd_control_client?func=fd_set_capture_mode&data=0"
 
     try{
         val response = httpGetter(apiCall)
@@ -576,13 +617,14 @@ suspend fun setLed(value: Int): String {
 suspend fun setExposure(exposureLevel: Int): String {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?exposure=$exposureLevel"
 
+    val displayExposure = exposureLevel - 2
     try{
         val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
             Log.d("CAMERA", "Exposure set to $exposureLevel")
-            "Exposure set to $exposureLevel"
+            "Exposure set to $displayExposure"
         } else {
             Log.d("CAMERA", response)
             Log.d("CAMERA", "Exposure level $exposureLevel is invalid")
@@ -597,14 +639,20 @@ suspend fun setExposure(exposureLevel: Int): String {
 
 suspend fun setFilter(filterValue: Int): String {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?filter=$filterValue"
-
+    val displayFilter = when (filterValue) {
+        0 -> "Normal"
+        1 -> "Vivid"
+        2 -> "Low Light"
+        3 -> "Water"
+        else -> "Unknown Value"
+    }
     try{
         val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
             Log.d("CAMERA", "Filter set to $filterValue")
-            "Filter set to $filterValue"
+            "Filter set to $displayFilter"
         } else {
             Log.d("CAMERA", response)
             Log.d("CAMERA", "Filter value $filterValue is invalid")
@@ -670,7 +718,7 @@ suspend fun setFOV(fovValue: Int): String {
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
             Log.d("CAMERA", "FOV set to $fovValue")
-            ""
+            "FOV set to $fovValue"
         } else {
             Log.d("CAMERA", response)
             Log.d("CAMERA", "FOV $fovValue invalid")
@@ -684,7 +732,7 @@ suspend fun setFOV(fovValue: Int): String {
 }
 
 suspend fun setThumbnail(value: Int): String {
-    val apiCall = "http://$ip/cgi-bin/foream_remote_control?thm-$value"
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?thm=$value"
 
     try{
         val response = httpGetter(apiCall)
@@ -749,6 +797,42 @@ suspend fun setCameraDateTime(dateTimeValue: String): String {
     }
 }
 
+suspend fun setVideoResolution(resValue: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?video_res=$resValue"
+
+    return try {
+        val response = httpGetter(apiCall)
+
+        if (parseResponse(response) == 1) {
+            Log.d("CAMERA", response)
+            "Video resolution set to $resValue"
+        } else {
+            Log.d("CAMERA", response)
+            "Invalid resolution value"
+        }
+    } catch (e: Exception) {
+        "Connection Error"
+    }
+}
+
+suspend fun setVideoFramerate(fpsValue: Int): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?video_framerate=$fpsValue"
+
+    return try {
+        val response = httpGetter(apiCall)
+
+        if (parseResponse(response) == 1) {
+            Log.d("CAMERA", response)
+            "Video framerate set to $fpsValue FPS"
+        } else {
+            Log.d("CAMERA", response)
+            "Invalid framerate value"
+        }
+    } catch (e: Exception) {
+        "Connection Error"
+    }
+}
+
 suspend fun listFiles(): List<CameraFile> {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?list_files=/tmp/SD0/DCIM"
 
@@ -761,23 +845,89 @@ suspend fun listFiles(): List<CameraFile> {
     return parseFileList(response)
 }
 
-suspend fun APITest(): String {
-    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?2"
-    //val apiCall = "http://$ip/setting/cgi-bin/fd_control_client?func=fd_set_camera_off"
-    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?reboot"
-
-    //val apiCall = "http://$ip/cgi-bin/fd_control_client?func="
-    val apiCall = "http://$ip/cgi-bin/foream_remote_control?switch_photo_mode"
+suspend fun resetSettings(): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?reset_setting"
 
     try{
         val response = httpGetter(apiCall)
 
         return if (parseResponse(response) == 1){
             Log.d("CAMERA", response)
-            ""
+            Log.d("CAMERA", "Settings Reset")
+            "Settings Reset"
         } else {
             Log.d("CAMERA", response)
-            ""
+            Log.d("CAMERA", "Failed to Reset Settings")
+            "Failed to Reset Settings"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun rebootCamera(): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?reboot"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Rebooting Camera")
+            "Rebooting Camera..."
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Reboot Failed")
+            "Failed to reboot"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun shutdownCamera(): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?power_off"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Camera Turned Off")
+            "Turning Off Camera"
+        } else {
+            Log.d("CAMERA", response)
+            Log.d("CAMERA", "Failed to power off camera")
+            "Failed to power off"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
+suspend fun apiTest(): String {
+    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?2"
+    //val apiCall = "http://$ip/setting/cgi-bin/fd_control_client?func=fd_set_camera_off"
+    //val apiCall = "http://$ip/cgi-bin/foream_remote_control?reboot"
+
+    //val apiCall = "http://$ip/cgi-bin/fd_control_client?func="
+    val apiCall = "http://192.168.42.1/cgi-bin/foream_remote_control?fd_set_capture_mode=0"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Success"
+        } else {
+            Log.d("CAMERA", response)
+            "Fail"
         }
     }
 
