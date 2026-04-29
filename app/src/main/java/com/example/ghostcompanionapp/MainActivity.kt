@@ -223,6 +223,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             modifier = Modifier.fillMaxWidth()
         ) {
 
+
             /*
             Button (
                 modifier= Modifier.weight(1f),
@@ -240,6 +241,8 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             }
 
              */
+
+
 
 
             Button(
@@ -279,23 +282,8 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    checkConnectionState = false
-                    connectToCameraState = false
-                    scope.launch {
-                        responseMessage = "Checking Connection..."
-                        currentSettings = getCameraSettings()
-                        if (currentSettings.status == 1) {
-                            responseMessage = "Camera Connected!"
-                            navController.navigate("startLivestream")
-                        } else {
-                            responseMessage = "Camera Not Connected"
-                        }
-                        checkConnectionState = true
-                        connectToCameraState = true
-                    }
-
-                },
-                enabled = connectToCameraState
+                    navController.navigate("startLivestream")
+                }
             )
             {
                 Text("Start Livestream")

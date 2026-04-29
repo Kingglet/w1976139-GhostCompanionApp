@@ -17,7 +17,8 @@ import org.json.JSONArray
 
 var ip = "192.168.42.1"
 
-/*
+var camIP = ""
+
 suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Dispatchers.IO){
     try {
         val socket = DatagramSocket(5555).apply{
@@ -30,16 +31,16 @@ suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Di
 
         socket.receive(packet)
 
-        ip = packet.address.hostAddress
+        camIP = packet.address.hostAddress
 
         val received = String(packet.data, 0, packet.length)
 
         socket.close()
 
         Log.d("CAMERA", "Packet: $received")
-        Log.d("CAMERA", "Camera IP: $ip")
+        Log.d("CAMERA", "Camera IP: $camIP")
 
-        ip
+        camIP
     }
 
     catch (e: Exception) {
@@ -47,7 +48,7 @@ suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Di
         "192.168.42.1"
     }
 }
-*/
+
 
 suspend fun httpGetter(urlString: String): String = withContext(Dispatchers.IO) {
     val url = URL(urlString)
@@ -277,6 +278,7 @@ fun parseFileList(xml: String): List<CameraFile> {
     return files
 }
 
+
 fun getStoragePercent(sdTotal: Int, sdFree: Int): Int {
     try {
         val calculationFactor = 100 / sdTotal.toDouble()
@@ -298,8 +300,6 @@ fun getCaptureModeText(modeInt: Int): String {
         else -> "Unknow Capture Mode"
     }
 }
-
-
 
 suspend fun deleteFile(filePath: String): Boolean {
     val url = "http://$ip/cgi-bin/foream_remote_control?delete_media_file=$filePath"
@@ -382,6 +382,27 @@ suspend fun getCameraStatus(): String {
         "Connection error - Check phone is connected to camera Wi-Fi"
     }
 }
+
+suspend fun getCamSettingsLivestream(): String {
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?get_camera_setting"
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Success"
+        } else {
+            Log.d("CAMERA", response)
+            "Fail"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
+    }
+}
+
 
 suspend fun getCameraSettings(): CameraSettings {
 
@@ -775,6 +796,8 @@ suspend fun setLanguage(languageValue: Int): String {
     }
 }
 
+
+
 suspend fun setCameraDateTime(dateTimeValue: String): String {
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?set_time=$dateTimeValue"
 
@@ -911,13 +934,72 @@ suspend fun shutdownCamera(): String {
     }
 }
 
+//------------- LIVESTREAMING API --------
+
+fun generateQRText(ssid: String, password: String): String {
+    return "17|$ssid|$password|RTSP"
+}
+
+suspend fun startRTMPStream(cameraIP: String,
+                            rtmpURLNoPrefix: String,
+                            res: String = "720P",
+                            bitrate: Int = 2000000): String {
+    try {
+        val convertedURL = rtmpURLNoPrefix.replace("&", "***")
+
+        val apiCall = "http://$cameraIP/cgi-bin/foream_remote_control?start_rtmp_with_param=$convertedURL&stream_res=$res&stream_bitrate=$bitrate"
+
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA_RTMP", response)
+            Log.d("CAMERA_RTMP", "Livestream Started")
+            "Stream Started"
+        } else {
+            Log.d("CAMERA_RTMP", response)
+            Log.d("CAMERA_RTMP", "Livestream Start Failed")
+            "Failed To Start Stream"
+        }
+
+    } catch (e: Exception) {
+        Log.e("CAMERA_RTMP", "{$e.message}")
+        return "Failed to start RTMP"
+        }
+    }
+
+suspend fun stopRTMPStream(cameraIP: String): String {
+    try {
+        val apiCall = "http://$cameraIP/cgi-bin/foream_remote_control?stop_rtmp"
+
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1) {
+            Log.d("CAMERA_RTMP", response)
+            Log.d("CAMERA_RTMP", "Livestream Stopped")
+            "Stream Stopped"
+        } else {
+            Log.d("CAMERA_RTMP", response)
+            Log.d("CAMERA_RTMP", "Livestream Stop Failed")
+            "Failed To Stop Stream"
+        }
+
+    } catch (e: Exception) {
+        Log.e("CAMERA_RTMP", "${e.message}")
+        return "Failed to stop RTMP"
+    }
+}
+
+// ----- TESMPLATES AND TESTING
+
+
 suspend fun apiTest(): String {
     //val apiCall = "http://$ip/cgi-bin/foream_remote_control?2"
     //val apiCall = "http://$ip/setting/cgi-bin/fd_control_client?func=fd_set_camera_off"
     //val apiCall = "http://$ip/cgi-bin/foream_remote_control?reboot"
 
     //val apiCall = "http://$ip/cgi-bin/fd_control_client?func="
-    val apiCall = "http://192.168.42.1/cgi-bin/foream_remote_control?fd_set_capture_mode=0"
+    //val apiCall = "http://192.168.42.1/cgi-bin/foream_remote_control?fd_set_capture_mode=0"
+    val apiCall = "http://192.168.42.1/cgi-bin/foream_remote_control?get_camera_setting"
 
     try{
         val response = httpGetter(apiCall)
