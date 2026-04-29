@@ -42,14 +42,15 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
     var ssid by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var rtmpUrl by rememberSaveable { mutableStateOf("") }
-    //var rtmpUrl by rememberSaveable { mutableStateOf("192.168.3.133:1935/live/5") }
-
-    ssid = "BT-62CJN2"
-    password = "uC4TG6deRHRQtQ"
-
+    //var rtmpUrl by rememberSaveable { mutableStateOf("") }
 
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var cameraIP by rememberSaveable { mutableStateOf("") }
+
+    //ssid = "BT-62CJN2"
+    //password = "uC4TG6deRHRQtQ"
+    //rtmpUrl = "192.168.3.133:1935/live/5"
+    //cameraIP = "192.168.1.251"
 
     var isDiscovering by rememberSaveable { mutableStateOf(false) }
     var isStreaming by rememberSaveable { mutableStateOf(false) }
@@ -105,6 +106,16 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
             colors = inputFieldColours
         )
 
+        Spacer(modifier = Modifier.padding(6.dp))
+
+        OutlinedTextField(
+            value = cameraIP,
+            onValueChange = { cameraIP = it },
+            label = { Text("Camera IP (Enter Manually or Use Auto Detect)") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = inputFieldColours
+        )
+
         Spacer(modifier = Modifier.padding(10.dp))
 
         Button(
@@ -145,15 +156,25 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
 
                     val cameraInfo = cameraListener()
 
-                    if (cameraInfo == null) {
-                        responseMessage = "No camera broadcast detected"
+                    if (cameraInfo != null) {
+                        cameraIP = cameraInfo.cameraIP
+                        responseMessage = "Camera detected: ${cameraInfo.cameraModel} @ $cameraIP"
                         isDiscovering = false
                         return@launch
                     }
 
-                    cameraIP = cameraInfo.cameraIP
-                    responseMessage = "Camera detected: ${cameraInfo.cameraModel} @ $cameraIP"
+                    val detectedIP = findDriftOnNetwork()
+
+                    if (detectedIP != null) {
+                        cameraIP = detectedIP
+                        responseMessage = "Camera detected: @ $cameraIP"
+                        isDiscovering = false
+                        return@launch
+                    }
+
+                    responseMessage = "No camera broadcast or IP detected"
                     isDiscovering = false
+                    return@launch
                 }
             }
         ) {

@@ -11,9 +11,14 @@ import java.net.DatagramSocket
 import java.net.HttpURLConnection
 import java.net.URL
 import android.util.Log
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlin.math.round
 import kotlin.math.roundToInt
 import org.json.JSONArray
+import java.net.Inet4Address
+import java.net.NetworkInterface
+
 
 var ip = "192.168.42.1"
 
@@ -50,14 +55,14 @@ suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Di
 }
 
 
-suspend fun httpGetter(urlString: String): String = withContext(Dispatchers.IO) {
+suspend fun httpGetter(urlString: String, timeout: Int = 5000): String = withContext(Dispatchers.IO) {
     val url = URL(urlString)
     val con: HttpURLConnection = url.openConnection() as HttpURLConnection
 
     try {
         con.requestMethod = "GET"
-        con.connectTimeout = 5000
-        con.readTimeout = 5000
+        con.connectTimeout = timeout
+        con.readTimeout = timeout
 
         val bf = BufferedReader(InputStreamReader(con.inputStream))
         bf.use { it.readText() }
@@ -305,7 +310,91 @@ suspend fun deleteFile(filePath: String): Boolean {
     val url = "http://$ip/cgi-bin/foream_remote_control?delete_media_file=$filePath"
     val xml = httpGetter(url)
 
-    return parseResponse(xml) == 1
+
+    if (parseResponse(xml) == 1) {
+        Log.d("CAMERA", "Deleted File: $filePath")
+        return true
+    } else {
+        Log.d("CAMERA","Failed to delet $filePath")
+        return false
+    }
+}
+
+suspend fun deleteMultipleFiles(filePaths: List<String>): String {
+    if (filePaths.isEmpty()) {
+        Log.d("CAMERA", "No files to delete - File Path list empty")
+        return "No Files to Delete"
+    }
+
+    if (filePaths.size > 40) {
+        Log.d("CAMERA", "Cannot delete over 40 files")
+        return "To Many Files to bulk delete (Max 40)"
+    }
+
+    val joinedFileNames = filePaths.joinToString("|")
+
+    val apiCall = "http://$ip/cgi-bin/foream_remote_control?delete_media_multfiles=${filePaths.size}|$joinedFileNames"
+
+
+    try{
+        val response = httpGetter(apiCall)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Files Deleted"
+        } else {
+            Log.d("CAMERA", response)
+            "Files couldn't be deleted"
+        }
+    }
+
+    catch (e: Exception){
+        Log.e("CAMERA", "$e.message")
+        return "Connection Error"
+    }
+}
+
+suspend fun deleteThumbnailFiles(fileList: List<CameraFile>): String {
+    val thumbnailFiles = fileList.filter {
+        it.fileName.startsWith("VID") && it.fileName.endsWith("_thm.MP4")
+    }
+
+    if (thumbnailFiles.isEmpty()) {
+        Log.d("CAMERA", "No thumbnail files found")
+        return "No thumbnail files found"
+    }
+
+    val thumbnailPaths = thumbnailFiles.map { it.filePath }
+
+    val chunks = thumbnailPaths.chunked(40)
+
+    var deletedFilesCount = 0
+
+    Log.d("CAMERA", "${thumbnailPaths.size} thumbnail files found")
+    Log.d("CAMERA", "Deleting in ${chunks.size} chunk(s)")
+
+    try {
+
+        for (chunk in chunks) {
+
+            val response = deleteMultipleFiles(chunk)
+
+            if (response == "Files Deleted") {
+                deletedFilesCount += chunk.size
+                Log.d("CAMERA", "Chunk deleted successfully (${chunk.size} files)")
+            } else {
+                Log.d("CAMERA", "Chunk delete failed: $response")
+                return "Failed To Delete All Thumbnails"
+            }
+        }
+
+        Log.d("CAMERA", "Deleted $deletedFilesCount thumbnail files")
+        return "Deleted $deletedFilesCount Thumbnail Files"
+
+    } catch (e: Exception){
+        Log.e("CAMERA", "$e.message")
+        return "Connection Error"
+    }
 }
 
 suspend fun checkConnection(): Boolean{
@@ -380,26 +469,6 @@ suspend fun getCameraStatus(): String {
     catch (e: Exception){
         Log.e("CAMERA","Connection Failed")
         "Connection error - Check phone is connected to camera Wi-Fi"
-    }
-}
-
-suspend fun getCamSettingsLivestream(): String {
-    val apiCall = "http://$ip/cgi-bin/foream_remote_control?get_camera_setting"
-
-    try{
-        val response = httpGetter(apiCall)
-
-        return if (parseResponse(response) == 1){
-            Log.d("CAMERA", response)
-            "Success"
-        } else {
-            Log.d("CAMERA", response)
-            "Fail"
-        }
-    }
-
-    catch (e: Exception){
-        return "Connection Error"
     }
 }
 
@@ -986,6 +1055,98 @@ suspend fun stopRTMPStream(cameraIP: String): String {
     } catch (e: Exception) {
         Log.e("CAMERA_RTMP", "${e.message}")
         return "Failed to stop RTMP"
+    }
+}
+
+suspend fun findDriftOnNetwork():String? {
+
+    return withContext(Dispatchers.IO) {
+
+        val localDeviceIP = getLocalDeviceIPAddress()
+
+        if (localDeviceIP == null) {
+            Log.e("CAMERA_RTMP", "Local Device IP couldn't be found")
+            return@withContext null
+        }
+
+        Log.d("CAMERA_RTMP", "Local Device IP: $localDeviceIP")
+
+        val subnetPrefix = localDeviceIP.substringBeforeLast(".") + "."
+        val subnetBottom: Int = 1
+        val subnetTop: Int = 254
+
+        Log.d("CAMERA_RTMP", "Current Subnet: $subnetPrefix")
+        Log.d("CAMERA_RTMP", "Scanning Subnet: $subnetPrefix $subnetBottom to $subnetTop")
+
+        val scanJobs = (subnetBottom..subnetTop).map {host ->
+            async {
+                val testingIP = "$subnetPrefix$host"
+
+                try {
+                    Log.d("CAMERA_RTMP", "Testing IP: $testingIP")
+
+                    val result = getCamSettingsLivestream(testingIP, timeout = 1000)
+
+                    if (result == "Success") {
+                        Log.d("CAMERA_RTMP", "Drift Camera found at $testingIP")
+                        return@async testingIP
+                    }
+
+
+                } catch (e: Exception) {
+                    Log.e("CAMERA_RTMP", "Error finding a camera on the Network. $testingIP ${e.message}")
+
+                }
+                null
+            }
+        }
+
+        val results = scanJobs.awaitAll()
+        results.firstOrNull { it != null }
+
+    }
+}
+
+
+fun getLocalDeviceIPAddress():String? {
+    try {
+        val interfaces = NetworkInterface.getNetworkInterfaces()
+
+        for (networkInterface in interfaces) {
+            val addresses = networkInterface.inetAddresses
+            for (address in addresses) {
+                if (!address.isLoopbackAddress && address is Inet4Address) {
+                    val ip = address.hostAddress
+                    Log.d("CAMERA_RTMP", "Current IP Detected [$ip] on ${networkInterface.displayName}")
+                    return ip
+                }
+            }
+        }
+        return null
+    } catch (e: Exception) {
+        Log.e("CAMERA_RTMP", "Failed to get IP: ${e.message}")
+        return null
+    }
+}
+
+
+suspend fun getCamSettingsLivestream(thisIP: String = ip, timeout: Int = 5000): String {
+    val apiCall = "http://$thisIP/cgi-bin/foream_remote_control?get_camera_setting"
+
+    try{
+        val response = httpGetter(apiCall, timeout = timeout)
+
+        return if (parseResponse(response) == 1){
+            Log.d("CAMERA", response)
+            "Success"
+        } else {
+            Log.d("CAMERA", response)
+            "Fail"
+        }
+    }
+
+    catch (e: Exception){
+        return "Connection Error"
     }
 }
 

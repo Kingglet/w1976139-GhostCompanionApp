@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +56,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import com.example.ghostcompanionapp.ui.theme.GhostCompanionAppTheme
 import kotlinx.coroutines.delay
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import kotlin.text.trimIndent
 
 
@@ -824,6 +828,11 @@ fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var responseMessage by rememberSaveable { mutableStateOf("Loading files...") }
 
+    var showDeletionDialog by rememberSaveable { mutableStateOf(false) }
+    var fileToDelete by rememberSaveable { mutableStateOf<CameraFile?>(null) }
+
+    var showDeleteThumbnailDialog by rememberSaveable { mutableStateOf(false) }
+
     val context = LocalContext.current
     var fileList by rememberSaveable { mutableStateOf<List<CameraFile>>(emptyList()) }
 
@@ -839,16 +848,86 @@ fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 
+
+    if (showDeletionDialog && fileToDelete != null){
+        AlertDialog(
+            onDismissRequest = { showDeletionDialog = false },
+            title = { Text("Delete File") },
+            text = { Text("Are you sure you want to delete:\n${fileToDelete!!.fileName}?") },
+            confirmButton = {
+                Button(onClick = {
+                    showDeletionDialog = false
+                    scope.launch{
+                        responseMessage = "Deleting ${fileToDelete!!.fileName}..."
+
+                        val deleted = deleteFile(fileToDelete!!.filePath)
+
+                        if (deleted == true) {
+                            fileList = fileList.filter { it.filePath != fileToDelete!!.filePath }
+                            responseMessage = "Deleted ${fileToDelete!!.fileName}"
+                        } else {
+                            responseMessage = "Deletion Failed"
+                        }
+
+                        fileToDelete = null
+
+                    }
+                }) {Text("Yes")}
+            },
+            dismissButton = {
+                Button(onClick = {
+                    showDeletionDialog = false
+                    fileToDelete = null
+                }) { Text("Cancel")}
+            }
+        )
+    }
+
+    if (showDeleteThumbnailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteThumbnailDialog = false},
+            title = { Text("Delete All Thumbnail Files") },
+            text = { Text("Are you sure you want to delete all thumbnail files?\n(Thumbnail files are smaller, lower quality version of recorded footage and follow the format of VIDxxxxx_thm.MP4)") },
+            confirmButton = {
+                Button(onClick = {
+                    showDeleteThumbnailDialog = false
+
+                    scope.launch {
+                        responseMessage = "Deleting thumbnail files..."
+                        val result = deleteThumbnailFiles(fileList)
+                        responseMessage = result
+
+                        if (result.startsWith("Deleted")) {
+                            fileList = fileList.filter {
+                                !(it.fileName.startsWith("VID") && it.fileName.endsWith("_thm.MP4"))
+                            }
+                        }
+                    }
+
+                }) {
+                    Text("Yes")
+                }
+            }, dismissButton = {
+                Button(onClick = { showDeleteThumbnailDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().padding(12.dp)
+        modifier = Modifier.fillMaxSize()
+            .padding(12.dp)
     ) {
         Text(responseMessage)
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        LazyColumn {
+
+        LazyColumn (modifier = Modifier.weight(1f)){
             items(fileList) { file ->
 
                 Row(
@@ -863,13 +942,11 @@ fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
                                 val encodedUrl = Uri.encode(videoUrl)
 
                                 navController.navigate("videoPlayer/$encodedUrl")
-                            },
-                            enabled = file.fileType == "MP4"
+                            }
                         ){
                             Text("Play")
                         }
                     } else {
-
 
                         Button(
                             onClick = {
@@ -888,30 +965,50 @@ fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
                         modifier = Modifier.weight(1f)
                     )
 
-
                     Button(
                         onClick = {
-                            scope.launch{
-                                responseMessage = "Deleting ${file.fileName}..."
-                                val deletedFile = deleteFile(file.filePath)
-
-                                if (deletedFile) {
-                                    fileList = fileList.filter {it.filePath != file.filePath}
-                                    responseMessage = "Deleted ${file.fileName}"
-                                } else {
-                                    responseMessage = "Delete Failed"
-                                }
-                            }
+                            fileToDelete = file
+                            showDeletionDialog = true
                         }
                     ) {
                         Text("Delete File")
                     }
 
                 }
+                Spacer(modifier = Modifier.padding(6.dp))
             }
         }
-    }
 
+        Spacer(modifier = Modifier.padding(6.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                showDeleteThumbnailDialog = true
+            }
+        ) {
+            Text("Delete All Thumbnail Files")
+        }
+
+        Spacer(modifier = Modifier.padding(6.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                scope.launch {
+                    try {
+                        fileList = listFiles()
+                        responseMessage = "Files found: ${fileList.size}"
+
+                    } catch (e: Exception) {
+                        responseMessage = "Failed to load files"
+                    }
+                }
+            }
+        ) {
+            Text("Refresh Files from Camera SD Card")
+        }
+    }
 }
 
 @OptIn(UnstableApi::class)
