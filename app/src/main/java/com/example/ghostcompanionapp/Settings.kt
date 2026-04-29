@@ -213,7 +213,6 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier) {
         .fillMaxSize()
         .padding(12.dp)) {
         // -------------- UI ---------------
-        Spacer(modifier = Modifier.padding(16.dp))
 
         Text("Camera Settings",
             modifier = Modifier.fillMaxWidth(),
@@ -650,7 +649,7 @@ fun Settings(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center)
 
-        Spacer(modifier = Modifier.padding(20.dp))
+
 
 
 

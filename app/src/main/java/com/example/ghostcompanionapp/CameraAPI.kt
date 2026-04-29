@@ -24,6 +24,29 @@ var ip = "192.168.42.1"
 
 var camIP = ""
 
+suspend fun updateIPForAPI () {
+    Log.d("CAMERA", "Searching for camera IP via IP Pinging")
+    val detectedIP = findDriftOnNetwork()
+
+    if (detectedIP != null) {
+        ip = detectedIP
+        Log.d("CAMERA", "Camera IP found via IP Pinging: $ip")
+    }
+
+
+    Log.d("CAMERA", "Searching for camera IP via UDP Broadcast")
+    val cameraInfo = cameraListener()
+
+    if (cameraInfo != null) {
+        ip = cameraInfo.cameraIP
+        Log.d("CAMERA", "Camera IP found via UDP Broadcast: $ip")
+    }
+
+    Log.d("CAMERA", "No camera broadcast or IP detected. IP for API still $ip")
+}
+
+
+
 suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Dispatchers.IO){
     try {
         val socket = DatagramSocket(5555).apply{

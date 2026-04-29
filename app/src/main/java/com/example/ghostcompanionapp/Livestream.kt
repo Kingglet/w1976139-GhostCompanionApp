@@ -68,206 +68,223 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(12.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.padding(12.dp))
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
 
-        Text("Livestream Setup")
+        Text("Livestream Setup and Control")
 
         Spacer(modifier = Modifier.padding(6.dp))
 
-        OutlinedTextField(
-            value = ssid,
-            onValueChange = { ssid = it },
-            label = { Text("Router SSID") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = inputFieldColours
-        )
 
-        Spacer(modifier = Modifier.padding(6.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Router Password") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = inputFieldColours
-        )
-
-        Spacer(modifier = Modifier.padding(6.dp))
-
-        OutlinedTextField(
-            value = rtmpUrl,
-            onValueChange = { rtmpUrl = it },
-            label = { Text("RTMP Server (no rtmp:// prefix)") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = inputFieldColours
-        )
-
-        Spacer(modifier = Modifier.padding(6.dp))
-
-        OutlinedTextField(
-            value = cameraIP,
-            onValueChange = { cameraIP = it },
-            label = { Text("Camera IP (Enter Manually or Use Auto Detect)") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = inputFieldColours
-        )
-
-        Spacer(modifier = Modifier.padding(10.dp))
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                if (ssid.isBlank()) {
-                    responseMessage = "SSID cannot be empty"
-                    return@Button
-                }
-
-                val qrText = generateQRText(ssid, password)
-                qrBitmap = generateQRBitmap(qrText)
-                responseMessage = "Show QR code to camera to connect"
-            }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Generate QR Code")
-        }
 
-        Spacer(modifier = Modifier.padding(10.dp))
 
-        qrBitmap?.let {
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "QR Code",
-                modifier = Modifier.size(250.dp)
+            OutlinedTextField(
+                value = ssid,
+                onValueChange = { ssid = it },
+                label = { Text("Router SSID") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = inputFieldColours
             )
-        }
 
-        Spacer(modifier = Modifier.padding(10.dp))
+            Spacer(modifier = Modifier.padding(6.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isDiscovering && !isStreaming,
-            onClick = {
-                scope.launch {
-                    responseMessage = "Listening for camera broadcast..."
-                    isDiscovering = true
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Router Password") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = inputFieldColours
+            )
 
-                    val cameraInfo = cameraListener()
+            Spacer(modifier = Modifier.padding(6.dp))
 
-                    if (cameraInfo != null) {
-                        cameraIP = cameraInfo.cameraIP
-                        responseMessage = "Camera detected: ${cameraInfo.cameraModel} @ $cameraIP"
+            OutlinedTextField(
+                value = rtmpUrl,
+                onValueChange = { rtmpUrl = it },
+                label = { Text("RTMP Server (no rtmp:// prefix)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = inputFieldColours
+            )
+
+            Spacer(modifier = Modifier.padding(6.dp))
+
+            OutlinedTextField(
+                value = cameraIP,
+                onValueChange = { cameraIP = it },
+                label = { Text("Camera IP (Enter Manually or Use Auto Detect)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = inputFieldColours
+            )
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    if (ssid.isBlank()) {
+                        responseMessage = "SSID cannot be empty"
+                        return@Button
+                    }
+
+                    val qrText = generateQRText(ssid, password)
+                    qrBitmap = generateQRBitmap(qrText)
+                    responseMessage = "Show QR code to camera to connect"
+                }
+            ) {
+                Text("Generate QR Code")
+            }
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            qrBitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = "QR Code",
+                    modifier = Modifier.size(250.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isDiscovering && !isStreaming,
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Listening for camera broadcast..."
+                        Log.d("CAMERA", "Searching for camera IP via UDP Broadcast")
+                        isDiscovering = true
+
+                        val cameraInfo = cameraListener()
+
+                        if (cameraInfo != null) {
+                            cameraIP = cameraInfo.cameraIP
+                            Log.d("CAMERA", "Camera IP found via UDP Broadcast: $cameraIP")
+                            responseMessage =
+                                "Camera detected: ${cameraInfo.cameraModel} @ $cameraIP"
+                            isDiscovering = false
+                            return@launch
+                        }
+
+                        responseMessage = "Looking for IP"
+                        Log.d("CAMERA", "Searching for camera IP via IP Pinging")
+                        val detectedIP = findDriftOnNetwork()
+
+                        if (detectedIP != null) {
+                            cameraIP = detectedIP
+                            Log.d("CAMERA", "Camera IP found via IP Pinging: $cameraIP")
+                            responseMessage = "Camera detected: @ $cameraIP"
+                            isDiscovering = false
+                            return@launch
+                        }
+
+                        responseMessage = "No camera broadcast or IP detected"
                         isDiscovering = false
                         return@launch
                     }
-
-                    val detectedIP = findDriftOnNetwork()
-
-                    if (detectedIP != null) {
-                        cameraIP = detectedIP
-                        responseMessage = "Camera detected: @ $cameraIP"
-                        isDiscovering = false
-                        return@launch
-                    }
-
-                    responseMessage = "No camera broadcast or IP detected"
-                    isDiscovering = false
-                    return@launch
                 }
+            ) {
+                Text("Detect Camera IP")
             }
-        ) {
-            Text("Detect Camera IP")
-        }
 
-        Spacer(modifier = Modifier.padding(10.dp))
+            Spacer(modifier = Modifier.padding(10.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = cameraIP.isNotEmpty() && !isStreaming && !isDiscovering,
-            onClick = {
-                scope.launch {
-                    responseMessage = "Starting RTMP stream..."
-                    val result = startRTMPStream(cameraIP, rtmpUrl)
-                    responseMessage = result
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = cameraIP.isNotEmpty() && !isStreaming && !isDiscovering,
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Starting RTMP stream..."
+                        val result = startRTMPStream(cameraIP, rtmpUrl)
+                        responseMessage = result
 
-                    if (result == "Stream Started") {
-                        isStreaming = true
-                    } else {
-                        isStreaming = false
+                        if (result == "Stream Started") {
+                            isStreaming = true
+                        } else {
+                            isStreaming = false
+                        }
                     }
                 }
+            ) {
+                Text("Start Livestream (RTMP)")
             }
-        ) {
-            Text("Start Livestream (RTMP)")
-        }
 
-        Spacer(modifier = Modifier.padding(6.dp))
+            Spacer(modifier = Modifier.padding(6.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isStreaming && !isDiscovering,
-            onClick = {
-                scope.launch {
-                    responseMessage = "Stopping RTMP stream..."
-                    val result = stopRTMPStream(cameraIP)
-                    responseMessage = result
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isStreaming && !isDiscovering,
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Stopping RTMP stream..."
+                        val result = stopRTMPStream(cameraIP)
+                        responseMessage = result
 
-                    if (result == "Stream Stopped") {
-                        isStreaming = false
+                        if (result == "Stream Stopped") {
+                            isStreaming = false
+                        }
                     }
                 }
+            ) {
+                Text("Stop Livestream")
             }
-        ) {
-            Text("Stop Livestream")
-        }
 
-        Spacer(modifier = Modifier.padding(6.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = true,
-            onClick = {
-                scope.launch {
-                    responseMessage = "Starting RTMP stream..."
-                    val result = startRTMPStream("192.168.1.251", rtmpUrl)
-                    responseMessage = result
+            /*
+            Spacer(modifier = Modifier.padding(6.dp))
 
-                    if (result == "Stream Started") {
-                        isStreaming = true
-                    } else {
-                        isStreaming = false
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = true,
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Starting RTMP stream..."
+                        val result = startRTMPStream("192.168.1.251", rtmpUrl)
+                        responseMessage = result
+
+                        if (result == "Stream Started") {
+                            isStreaming = true
+                        } else {
+                            isStreaming = false
+                        }
                     }
                 }
+            ) {
+                Text("[Override] Start Livestream (RTMP)")
             }
-        ) {
-            Text("[Override] Start Livestream (RTMP)")
-        }
-        Spacer(modifier = Modifier.padding(6.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = true,
-            onClick = {
-                scope.launch {
-                    responseMessage = "Stopping RTMP stream..."
-                    val result = stopRTMPStream("192.168.1.251")
-                    responseMessage = result
+            Spacer(modifier = Modifier.padding(6.dp))
 
-                    if (result == "Stream Stopped") {
-                        isStreaming = false
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = true,
+                onClick = {
+                    scope.launch {
+                        responseMessage = "Stopping RTMP stream..."
+                        val result = stopRTMPStream("192.168.1.251")
+                        responseMessage = result
+
+                        if (result == "Stream Stopped") {
+                            isStreaming = false
+                        }
                     }
                 }
+            ) {
+                Text("[Override] Stop Livestream")
             }
-        ) {
-            Text("[Override] Stop Livestream")
+
+             */
+
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
         }
-
-
-
-        Spacer(modifier = Modifier.padding(10.dp))
-
         Text(responseMessage)
 
         Spacer(modifier = Modifier.padding(6.dp))

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -97,7 +98,6 @@ var currentSettings by mutableStateOf(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             GhostCompanionAppTheme {
 
@@ -105,47 +105,46 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
 
 
-                // defines navigation for each page
-                NavHost(navController, "startPage") {
+                Column(modifier = Modifier.fillMaxSize().systemBarsPadding()){
+                    // defines navigation for each page
+                    NavHost(navController, "startPage") {
 
-                    composable("startPage"){
-                        StartPage(navController)
+                        composable("startPage"){
+                            StartPage(navController)
+                        }
+
+                        composable("mainMenu") {
+                            MainMenu(navController, context = LocalContext.current)
+                        }
+
+                        composable("startLivestream"){
+                            Livestream(navController)
+                        }
+
+                        composable("cameraView"){
+                            CameraView(navController)
+                        }
+
+                        composable("placeholder") {
+                            Placeholder(navController)
+                        }
+
+                        composable("settings"){
+                            Settings(navController)
+                        }
+
+                        composable("fileViewer"){
+                            FileViewer(navController)
+                        }
+
+                        composable(
+                            route = "videoPlayer/{url}",
+                            arguments = listOf(navArgument("url") {type = NavType.StringType})
+                        ) {backStackEntry ->
+                            val url = backStackEntry.arguments?.getString("url") ?: ""
+                            VideoPlayerScreen(navController, url)
+                        }
                     }
-
-                    composable("mainMenu") {
-                        MainMenu(navController, context = LocalContext.current)
-                    }
-
-                    composable("startLivestream"){
-                        Livestream(navController)
-                    }
-
-                    composable("cameraView"){
-                        CameraView(navController)
-                    }
-
-                    composable("placeholder") {
-                        Placeholder(navController)
-                    }
-
-                    composable("settings"){
-                        Settings(navController)
-                    }
-
-                    composable("fileViewer"){
-                        FileViewer(navController)
-                    }
-
-                    composable(
-                        route = "videoPlayer/{url}",
-                        arguments = listOf(navArgument("url") {type = NavType.StringType})
-                    ) {backStackEntry ->
-                        val url = backStackEntry.arguments?.getString("url") ?: ""
-                        VideoPlayerScreen(navController, url)
-                    }
-
-
-
                 }
 
 
@@ -233,20 +232,16 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
                 modifier= Modifier.weight(1f),
                 onClick = {
                     scope.launch {
-
                         var response = apiTest()
                         responseMessage = response
                     }
                 }
-
                 )
             {
                 Text("Test Button")
             }
 
              */
-
-
 
 
             Button(
@@ -465,20 +460,32 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
 
 
-
-    Text(text = "Battery: ${currentSettings.battery}% | Storage: ${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%",
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp),
-        textAlign = TextAlign.Center)
-
     Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().padding(12.dp)
-    ) {
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
 
-        /*
+
+        Text(
+            text = "Camera Preview and Control\nBattery: ${currentSettings.battery}% | Storage: " +
+                    "${getStoragePercent(currentSettings.sdTotal, currentSettings.sdFree)}%",
+            modifier = Modifier
+                .fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.padding(6.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+
+        ) {
+
+            /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -491,54 +498,57 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
 
          */
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
 
-        ) {
+                ) {
 
 
-            if (previewEnabled) {
-                RtspLiveView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
-            } else {
-                Text(
-                    text = "Live Preview Off",
-                    modifier = Modifier.padding(8.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.padding(10.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                onClick = {
-                    previewEnabled = !previewEnabled
+                if (previewEnabled) {
+                    RtspLiveView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                } else {
+                    Text(
+                        text = "Live Preview Off",
+                        modifier = Modifier.padding(8.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
-            ){
-                Text(if (previewEnabled) "Diable Live Preview"
-                else "Enable Live Preview")
             }
-        }
 
-        Spacer(modifier = Modifier.padding(10.dp))
+            Spacer(modifier = Modifier.padding(10.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ){
-            Text(text = "Capture Mode: ${getCaptureModeText(currentSettings.captureMode)}")
-        }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    onClick = {
+                        previewEnabled = !previewEnabled
+                    }
+                ) {
+                    Text(
+                        if (previewEnabled) "Diable Live Preview"
+                        else "Enable Live Preview"
+                    )
+                }
+            }
 
-        /*
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(text = "Capture Mode: ${getCaptureModeText(currentSettings.captureMode)}")
+            }
+
+            /*
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -649,96 +659,99 @@ fun CameraView(navController: NavController, modifier: Modifier = Modifier){
 
          */
 
-        Spacer(modifier = Modifier.padding(10.dp))
+            Spacer(modifier = Modifier.padding(10.dp))
 
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    scope.launch {
-                        if (isRecording == true) {
-                            responseMessage = stopRecording()
-                            isRecording = false
-                        } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            if (isRecording == true) {
+                                responseMessage = stopRecording()
+                                isRecording = false
+                            } else {
 
-                            when (currentSettings.captureMode){
-                                0 -> responseMessage = startRecording()
-                                1 -> responseMessage = takePhoto()
-                                2 -> responseMessage = takePhoto()
-                                3 -> responseMessage = takePhoto()
+                                when (currentSettings.captureMode) {
+                                    0 -> responseMessage = startRecording()
+                                    1 -> responseMessage = takePhoto()
+                                    2 -> responseMessage = takePhoto()
+                                    3 -> responseMessage = takePhoto()
+                                }
                             }
                         }
+                    },
+                    enabled = settingsButtonState || (isRecording && currentSettings.captureMode == 0)
+                ) {
+
+                    if (isRecording != false) {
+                        buttonText = "Stop Recording"
+                    } else {
+
+                        when (currentSettings.captureMode) {
+                            0 -> buttonText = "Start Recording"
+                            1 -> buttonText = "Take Photo"
+                            2 -> buttonText = "Start Timelapse"
+                            3 -> buttonText = "Take Burst"
+                        }
                     }
-                },
-                enabled = settingsButtonState || (isRecording && currentSettings.captureMode == 0)
+
+
+                    Text(buttonText)
+                }
+
+            }
+
+            Spacer(modifier = Modifier.padding(4.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-
-                if (isRecording != false) {
-                    buttonText = "Stop Recording"
-                } else {
-
-                    when (currentSettings.captureMode){
-                        0 -> buttonText = "Start Recording"
-                        1 -> buttonText = "Take Photo"
-                        2 -> buttonText = "Start Timelapse"
-                        3 -> buttonText = "Take Burst"
-                    }
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            currentSettings = getCameraSettings()
+                            currentCameraSettings = currentSettings
+                            pendingCameraSettings = currentCameraSettings
+                            navController.navigate("settings")
+                        }
+                    },
+                    enabled = settingsButtonState
+                )
+                {
+                    Text("Settings")
                 }
-
-
-                Text(buttonText)
             }
 
-        }
+            Spacer(modifier = Modifier.padding(4.dp))
 
-        Spacer(modifier = Modifier.padding(4.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    scope.launch {
-                        currentSettings = getCameraSettings()
-                        currentCameraSettings = currentSettings
-                        pendingCameraSettings = currentCameraSettings
-                        navController.navigate("settings")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("fileViewer")
                     }
-                },
-                enabled = settingsButtonState)
-            {
-                Text("Settings")
-            }
-        }
-
-        Spacer(modifier = Modifier.padding(4.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("fileViewer")
+                ) {
+                    Text("View Files on SD Card")
                 }
-            ){
-                Text("View Files on SD Card")
             }
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            // displays confirmation messages for to the user after interacting with a button
+
         }
-
-        Spacer(modifier = Modifier.padding(10.dp))
-
-        // displays confirmation messages for to the user after interacting with a button
         Row {
             Text(text = responseMessage)
         }
@@ -887,7 +900,7 @@ fun FileViewer(navController: NavController, modifier: Modifier = Modifier) {
         AlertDialog(
             onDismissRequest = { showDeleteThumbnailDialog = false},
             title = { Text("Delete All Thumbnail Files") },
-            text = { Text("Are you sure you want to delete all thumbnail files?\n(Thumbnail files are smaller, lower quality version of recorded footage and follow the format of VIDxxxxx_thm.MP4)") },
+            text = { Text("Are you sure you want to delete all thumbnail files?\nDoing this helps to remove unnecessary media files and saves space.\n(Thumbnail files are smaller, lower quality version of recorded footage and follow the format of VIDxxxxx_thm.MP4)") },
             confirmButton = {
                 Button(onClick = {
                     showDeleteThumbnailDialog = false
