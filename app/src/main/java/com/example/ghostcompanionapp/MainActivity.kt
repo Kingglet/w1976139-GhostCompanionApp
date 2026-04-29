@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -59,6 +60,7 @@ import com.example.ghostcompanionapp.ui.theme.GhostCompanionAppTheme
 import kotlinx.coroutines.delay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.unit.sp
 import kotlin.text.trimIndent
 
 
@@ -172,31 +174,36 @@ fun StartPage(navController: NavController, modifier: Modifier = Modifier) {
         modifier = Modifier.fillMaxSize().padding(12.dp)
     ) {
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "Drift Ghost Companion App",
-                modifier = Modifier.padding(8.dp),
-                textAlign = TextAlign.Center
-            )
-        }
+        Text(
+            text = "Drift Ghost Companion App",
+            modifier = Modifier.padding(8.dp),
+            fontSize = 22.sp,
+            textAlign = TextAlign.Center
+        )
+
 
         Spacer(modifier = Modifier.padding(4.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                modifier = Modifier.weight(1f).width(300.dp),
-                onClick = {
-                    navController.navigate("mainMenu")
+        Text(
+            text = "Remotely Control Your Drift Camera and Livestream to the World!",
+            modifier = Modifier.padding(16.dp),
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center
+        )
 
-                }) {
-                Text("Begin")
-            }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+
+        Button(
+            modifier = Modifier.padding(8.dp).width(260.dp).height(50.dp),
+            onClick = {
+                navController.navigate("mainMenu")
+
+            }) {
+            Text(text = "Begin",
+                fontSize = 18.sp)
+
         }
     }
 }
@@ -213,39 +220,37 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
     var checkConnectionState by rememberSaveable { mutableStateOf(true) }
 
     Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Main Menu",
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center
+        )
+
+    Spacer(modifier = Modifier.padding(4.dp))
+
+    Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().padding(12.dp)
+        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
     ){
-    //Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 
+        Text(
+            text = "Connect to your camera's Wi-Fi via AP Mode to control your camera...",
+            modifier = Modifier.padding(8.dp),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
-
-            /*
-            Button (
-                modifier= Modifier.weight(1f),
-                onClick = {
-                    scope.launch {
-                        var response = apiTest()
-                        responseMessage = response
-                    }
-                }
-                )
-            {
-                Text("Test Button")
-            }
-
-             */
-
+        Spacer(modifier = Modifier.padding(4.dp))
 
             Button(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     checkConnectionState = false
                     connectToCameraState = false
@@ -268,18 +273,20 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             {
                 Text("Connect to Camera")
             }
-        }
+
         Spacer(modifier = Modifier.padding(4.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Text(
+            text = "Or start a Livestream via Station Mode!",
+            modifier = Modifier.padding(8.dp),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
 
+        Spacer(modifier = Modifier.padding(4.dp))
 
             Button(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     navController.navigate("startLivestream")
                 }
@@ -287,18 +294,20 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             {
                 Text("Start Livestream")
             }
-        }
 
-        Spacer(modifier = Modifier.padding(4.dp))
+        Spacer(modifier = Modifier.padding(16.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+            Text(
+                text = "Enures your camera is connected to the same Wi-Fi as this device OR ensure this device is connected to the camera's Wi-Fi",
+                modifier = Modifier.padding(8.dp),
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.padding(8.dp))
 
             Button(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     checkConnectionState = false
                     connectToCameraState = false
@@ -313,7 +322,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
             {
                 Text("Check Connection")
             }
-        }
+
 
         Spacer(modifier = Modifier.padding(4.dp))
 
@@ -337,14 +346,8 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
 
          */
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
             Button(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     //navController.navigate("placeholder")
 
@@ -353,16 +356,17 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier, contex
                 }) {
                 Text("Go To Wi-Fi Settings")
             }
-        }
 
 
         Spacer(modifier = Modifier.padding(10.dp))
 
         // displays confirmation messages for to the user after interacting with a button
-        Row {
             Text(text = responseMessage,
-                modifier = Modifier.padding(8.dp),
-                textAlign = TextAlign.Center)
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
