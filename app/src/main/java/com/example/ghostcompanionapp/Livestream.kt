@@ -47,10 +47,6 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var cameraIP by rememberSaveable { mutableStateOf("") }
 
-    //ssid = "BT-62CJN2"
-    //password = "uC4TG6deRHRQtQ"
-    //rtmpUrl = "192.168.3.133:1935/live/5"
-    //cameraIP = "192.168.1.251"
 
     var isDiscovering by rememberSaveable { mutableStateOf(false) }
     var isStreaming by rememberSaveable { mutableStateOf(false) }
