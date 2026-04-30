@@ -6,9 +6,7 @@ import kotlinx.coroutines.withContext
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 
-
-
-suspend fun cameraListener(timeoutMs: Int = 15000): CameraInfo? {
+suspend fun cameraListener(timeoutMs: Int = 10000): CameraInfo? {
     return withContext(Dispatchers.IO) {
         try {
             val socket = DatagramSocket(5555)

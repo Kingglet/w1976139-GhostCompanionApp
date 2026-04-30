@@ -87,7 +87,7 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
             OutlinedTextField(
                 value = ssid,
                 onValueChange = { ssid = it },
-                label = { Text("Router SSID") },
+                label = { Text("Network SSID (Can be router or hotspot)") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = inputFieldColours
             )
@@ -97,7 +97,7 @@ fun Livestream(navController: NavController, modifier: Modifier = Modifier) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Router Password") },
+                label = { Text("Network Password") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = inputFieldColours
             )

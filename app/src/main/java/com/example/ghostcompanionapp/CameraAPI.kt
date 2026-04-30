@@ -42,11 +42,11 @@ suspend fun updateIPForAPI () {
         Log.d("CAMERA", "Camera IP found via UDP Broadcast: $ip")
     }
 
-    Log.d("CAMERA", "No camera broadcast or IP detected. IP for API still $ip")
+    Log.d("CAMERA", "No camera broadcast or IP detected. IP for API is still $ip")
 }
 
 
-
+// old method (improved version created)
 suspend fun findCameraIP(connectionTimeout: Int = 5000): String = withContext(Dispatchers.IO){
     try {
         val socket = DatagramSocket(5555).apply{
@@ -110,7 +110,6 @@ fun parseResponse(xml: String): Int{
         }
         event = parser.next()
     }
-
     return -1
 }
 
@@ -333,7 +332,6 @@ suspend fun deleteFile(filePath: String): Boolean {
     val url = "http://$ip/cgi-bin/foream_remote_control?delete_media_file=$filePath"
     val xml = httpGetter(url)
 
-
     if (parseResponse(xml) == 1) {
         Log.d("CAMERA", "Deleted File: $filePath")
         return true
@@ -357,7 +355,6 @@ suspend fun deleteMultipleFiles(filePaths: List<String>): String {
     val joinedFileNames = filePaths.joinToString("|")
 
     val apiCall = "http://$ip/cgi-bin/foream_remote_control?delete_media_multfiles=${filePaths.size}|$joinedFileNames"
-
 
     try{
         val response = httpGetter(apiCall)
@@ -386,7 +383,6 @@ suspend fun deleteThumbnailFiles(fileList: List<CameraFile>): String {
         Log.d("CAMERA", "No thumbnail files found")
         return "No thumbnail files found"
     }
-
     val thumbnailPaths = thumbnailFiles.map { it.filePath }
 
     val chunks = thumbnailPaths.chunked(40)
@@ -397,9 +393,7 @@ suspend fun deleteThumbnailFiles(fileList: List<CameraFile>): String {
     Log.d("CAMERA", "Deleting in ${chunks.size} chunk(s)")
 
     try {
-
         for (chunk in chunks) {
-
             val response = deleteMultipleFiles(chunk)
 
             if (response == "Files Deleted") {
@@ -425,7 +419,7 @@ suspend fun checkConnection(): Boolean{
         val status = getCameraSettings()
 
         if (status.status == 1) {
-            Log.d("CAMERA", "Camera Connected. Default IP:  192.168.42.1")
+            Log.d("CAMERA", "Camera Connected. IP: $ip")
             return true
         } else {
             Log.d("CAMERA","Connection Failed")
@@ -438,6 +432,8 @@ suspend fun checkConnection(): Boolean{
         return false
     }
 }
+
+
 
 fun getCameraMiscSettings(): String {
     return try {
@@ -540,7 +536,6 @@ suspend fun getCameraSettings(): CameraSettings {
 
 
 suspend fun startRecording(): String {
-    //val ip = findCameraIP() ?: "192.168.42.1"
 
     try {
         val response = httpGetter("http://$ip/cgi-bin/foream_remote_control?start_record")
@@ -551,17 +546,14 @@ suspend fun startRecording(): String {
         } else {
             Log.d("CAMERA", response)
             "Recording Couldn't Be Started"
-
         }
     }
-
     catch (e: Exception){
         return "Connection Error"
     }
 }
 
 suspend fun stopRecording(): String {
-    //val ip = findCameraIP() ?: "192.168.42.1"
 
     try {
         val response = httpGetter("http://$ip/cgi-bin/foream_remote_control?stop_record")
@@ -699,7 +691,6 @@ suspend fun setZoom(zoomLevel: Int): String {
             "Zoom Level Not Set"
         }
     }
-
     catch (e: Exception){
         return "Connection Error"
     }
@@ -772,7 +763,6 @@ suspend fun setFilter(filterValue: Int): String {
             "Filter not set"
         }
     }
-
     catch (e: Exception){
         return "Connection Error"
     }
@@ -906,7 +896,6 @@ suspend fun setCameraDateTime(dateTimeValue: String): String {
             "Time not set"
         }
     }
-
     catch (e: Exception){
         return "Connection Error"
     }
@@ -1115,7 +1104,6 @@ suspend fun findDriftOnNetwork():String? {
                         return@async testingIP
                     }
 
-
                 } catch (e: Exception) {
                     Log.e("CAMERA_RTMP", "Error finding a camera on the Network. $testingIP ${e.message}")
 
@@ -1123,10 +1111,8 @@ suspend fun findDriftOnNetwork():String? {
                 null
             }
         }
-
         val results = scanJobs.awaitAll()
         results.firstOrNull { it != null }
-
     }
 }
 
